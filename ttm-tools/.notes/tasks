@@ -1,0 +1,9 @@
+P[Y21F-W6R-2038]- feat(tt-report): #2c05 map tt id to tk uuid (tags: #)
+  LOG_START
+  - [W6R] Desc: TaskWarrior often changes the name of tasks, but UUIDs are consistent. We want to use TimeTrap to be an interface compatible with Taskwarrior, so we need to map the ids together. 
+  - [W6R] Planning: Here are some assumptions that should probably hold to develop this algorithm
+    - [W6R] All task start dates should match between the two
+    - [W6R] The task description should mostly match. If not, it SHOULD be in taskwarrior's changes history
+    - [W6R] 
+  LOG_END
+

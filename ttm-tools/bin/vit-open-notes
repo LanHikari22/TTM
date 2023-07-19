@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# $1 - UUID of task
+a_uuid=$1
+
+tmp=/tmp/vit-open-notes.list
+
+notelinks=$(task _get ${a_uuid}.notelinks)
+if [ $? != 0 ] || [ -z $notelinks ]; then
+  echo "error: could not find any notelinks"
+  return 1
+fi
+
+notelinks_arr=$(echo $notelinks | tr ',' ' ')
+notelinks_arr=(${notelinks_arr})
+
+function accum_rg_note_entries() {
+  for notelink in "${notelinks_arr[@]}"; do
+    rg -F --vimgrep "$notelink" $(pwd) | rg -v "\(\*" >> $tmp
+  done
+}
+
+echo '' > $tmp
+accum_rg_note_entries
+
+# trim first line from $tmp as it's empty
+# cat $tmp
+cat $tmp | sed '/^[[:space:]]*$/d' > $tmp.1
+mv $tmp.1 $tmp
+
+# if we didn't find anything, try to look in $HOME/notes
+if [ ! -s $tmp ]; then
+  pushd $HOME/notes
+  accum_rg_note_entries
+  popd
+fi
+
+vim -q $tmp
+rm $tmp
+

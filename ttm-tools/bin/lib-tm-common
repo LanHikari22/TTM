@@ -1,0 +1,124 @@
+#!/bin/bash
+
+log_file=$HOME/.local/log/tm.fzf-cmd.log
+
+source lib-logging
+
+EC_OK=0
+EC_INVALID_UUID=3
+EC_PREREQ_ERROR=4
+EC_NO_RESULT=5
+
+function shorten_uuid() {
+  while read -r data; do
+    echo $data | cut -d'-' -f1
+  done
+}
+
+function parse_short_uuid_from_comment() {
+  while read -r line; do
+    # log_debug "line 0: " $data
+    # log_debug "line 1: " $(echo $data | cut -d'-' -f1)
+    # log_debug "line 2: " $(echo $data | cut -d'-' -f1 | rv | cut -d' ' -f1 | rev)
+    echo $line | cut -d'-' -f1 | rev | cut -d' ' -f1 | rev
+  done
+}
+
+function get_first_word_of_size() {
+  local token_size="$1"
+
+  while read -r line; do
+    line="$(echo $line | tr -s ' ' | sed 's/\[..m//g' | sed 's/\[.m//g')"
+    tokens=("$(echo $line)")
+    # log_debug "tokens? l=\"$line\" ---> ts=\"${tokens[2]}\""
+
+    local i=0
+    for token in $tokens; do
+      token=$(echo $token | sed 's/\x1b//g' | sed 's/\n//g')
+      # hex_token=$(xxd -pu <<< "$token")
+      # log_debug "token?? i=$i t=\"$token\" ht=\"$hex_token\" cnt=\"${#token}\" ==? siz=\"$token_size\""
+      # local i="$(expr $i + 1)"
+
+      if [[ ${#token} -eq $token_size ]]; then
+        # if [ -z $result ]; then
+          # local result=$(echo $token)
+        # fi
+        echo $token
+        break
+      fi
+    done
+
+    # if [ ! -z $result ]; then
+      # echo $result
+    # fi
+  done
+}
+
+# param $1 - current pane 
+# looks for "UUID: {uuid}" within this tmux pane
+# returns 0 if operation OK
+function extract_uuid_from_pane() {
+  local cur_pane=$1
+  local uuid=$(tmux capture-pane -t "$cur_pane" -p | grep UUID | head -n1 | parse_short_uuid_from_comment)
+  # log_debug "capture: " $(tmux capture-pane -t "$cur_pane" -p | grep UUID)
+  if [ -z $uuid ]; then
+    log_error 'could not parse uuid'
+    return $EC_INVALID_UUID
+  fi
+
+  echo $uuid
+}
+
+# param $1 - current pane
+# In the main VIT interface, finds the UUID of the current task we're in
+# returns 0 if operation OK
+function extract_uuid_from_main_vit_window() {
+  local cur_pane=$1
+
+  # [30m [46m happens to be the default cyan color marking a current highlighted item in VIT
+  # It may also only be [46m for first row. This is a pretty fragile method
+  local current_line="$(tmux capture-pane -e -t "$cur_pane" -p | grep '30m' | grep '46m')"
+  if [ -z $current_line ]; then
+    local current_line="$(tmux capture-pane -e -t "$cur_pane" -p | grep '46m')"
+  fi
+  if [ -z $current_line ]; then
+    # log_debug $(tmux capture-pane -e -t "$cur_pane" -p)
+    log_error 'could not parse uuid: no cyan line'
+    return $EC_INVALID_UUID
+  fi
+
+  # trim spaces so we can find the fields needed
+  local current_line="$(echo $current_line | tr -s ' ')"
+
+  # UUID Should always be in short format and preferably occcuring first
+  local uuid="$(echo $current_line | get_first_word_of_size 8)"
+  if [ -z $uuid ]; then
+    log_error "failed to parse current line for uuid: $current_line"
+    return $EC_INVALID_UUID
+  fi
+
+  # ensure we have a correct uuid by trying to parse it
+  local full_uuid="$(task _get "$uuid".uuid)"
+  if [ -z $full_uuid ]; then
+    log_error 'could not parse uuid: not a correct reading:' $uuid
+    return $EC_INVALID_UUID
+  fi
+
+  echo "$uuid"
+}
+
+function check_valid_uuid() {
+  local uuid=$1
+  [[ $(task _get $uuid.uuid | shorten_uuid) == $uuid ]]
+}
+
+function cleanup_spaces() {
+  while read -r data; do
+    echo $data | sed 's!\t! !g' | sed 's!  ! !g' | sed 's!  ! !g'
+  done
+}
+
+function rand_hex() {
+  local num_chars=$1
+  echo $(cat /dev/urandom | head -n1 | sha1sum | cut -c1-$num_chars)
+}

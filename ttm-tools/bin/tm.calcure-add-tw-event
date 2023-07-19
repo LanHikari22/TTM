@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# in vit and tmux, press e to open task editor and run "prefix :ru tm.vit-open-notes {this_pane} {target-pane}"
+# the uuid is figured out from the vit window
+
+# $1 - target pane -- unused. Ex: notes:1.2
+a_target_pane=$1
+a_cur_pane=$TMUX_PANE
+
+log_module='tm.calcure-add-tw-event'
+log_info_active=1
+log_debug_active=1
+log_trace_active=0
+source lib-tm-common
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}"  )" &> /dev/null && pwd )
+EVENTS_CSV="$HOME/.task/schedule/events.csv"
+
+uuid=$(extract_uuid_from_main_vit_window $a_cur_pane) || assert_ok "$uuid"
+
+# Extract date from schedule to parse. Schend field is only used for same day intervals for now. If not set, assume until EOD.
+scheduled=$(task _get $uuid.scheduled)
+until_t=$(task _get $uuid.endsch)
+log_trace "scheduled: " $scheduled
+log_trace "until_t: " $until_t
+
+# Parse scheduled day and start-end intervals
+scheduled_day=$(date -d"$scheduled" +%Y-%m-%d)
+scheduled_hhmm=$(date -d"$scheduled" +%H%M)
+until_hhmm=$(date -d"$until_t" +%H%M)
+log_trace "scheduled_day: $scheduled_day"
+log_trace "scheduled_hhmm: $scheduled_hhmm"
+log_trace "until_hhmm: $until_hhmm"
+
+# Format calcure event. Calcure doesn't seem to like dashes, so replace them all with underscore
+# Make sure event does not exceed 106 characters. Empirically found that it ignores the event around an amount after that.
+gcode=$(task _get $uuid.gcode | sed 's/-/_/g')
+proj=$(task _get $uuid.project | sed 's/-/_/g')
+desc=$(task _get $uuid.description | sed 's/-/_/g')
+etag=$(task _get $uuid.etag | sed 's/-/_/g')
+
+if [[ $etag == '' ]]; then
+  etag=$(echo EVNT)
+fi
+
+event=$(echo $scheduled_day-$scheduled_hhmm:$until_hhmm $etag $gcode $uuid $proj $desc | cut -c-100)
+log_trace "event: $event"
+
+# Add the event to the event file with a dummy row id
+scheduled_year=$(date -d"$scheduled" +%Y)
+scheduled_month=$(date -d"$scheduled" +%-m)
+scheduled_day=$(date -d"$scheduled" +%-d)
+desc_csv=$(echo $scheduled_hhmm:$until_hhmm $etag $gcode $uuid $proj $desc | cut -c-96)
+event_csv=$(echo 0,$scheduled_year,$scheduled_month,$scheduled_day,\"$desc_csv\",1,once,normal)
+log_trace "event_csv: $event_csv"
+echo $event_csv >> $EVENTS_CSV
+
+# Sort events, fixing dummy row id also
+# reorder events
+python3 "$SCRIPT_DIR/tm.calcure-update.py" "$EVENTS_CSV" 'reorder-events'
+script_status=$?
+echo re-order events status: $script_status
+
+# Add Calcure event
+# TODO This doesn't seem able to call calcure from a tmux script... Gives gibberish and makes no changes?
+#calcure --event="$event"
+#bash -c "calcure --event=\"$event\""
+#echo "calcure --event=\"$event\" && calcure" | tr --d '\n' | tmux loadb -
+#log_trace "calcure rc? $?"
+
+#echo "$uuid" | tr --d '\n' | tmux loadb -

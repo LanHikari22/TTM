@@ -1,0 +1,229 @@
+# [Created by task 2.5.1 7/26/2021 07:51:49]
+# Taskwarrior program configuration file.
+# For more documentation, see http://taskwarrior.org or try 'man task', 'man task-color',
+# 'man task-sync' or 'man taskrc'
+
+# Here is an example of entries that use the default, override and blank values
+#   variable=foo   -- By specifying a value, this overrides the default
+#   variable=      -- By specifying no value, this means no default
+#   #variable=foo  -- By commenting out the line, or deleting it, this uses the default
+
+# Use the command 'task show' to see all defaults and overrides
+
+# Files
+data.location=.task
+
+# Color theme (uncomment one to use)
+#include /usr/share/taskwarrior/light-16.theme
+#include /usr/share/taskwarrior/light-256.theme
+#include /usr/share/taskwarrior/dark-16.theme
+#include /usr/share/taskwarrior/dark-256.theme
+#include /usr/share/taskwarrior/dark-red-256.theme
+#include /usr/share/taskwarrior/dark-green-256.theme
+#include /usr/share/taskwarrior/dark-blue-256.theme
+#include /usr/share/taskwarrior/dark-violets-256.theme
+#include /usr/share/taskwarrior/dark-yellow-green.theme
+#include /usr/share/taskwarrior/dark-gray-256.theme
+#include /usr/share/taskwarrior/dark-gray-blue-256.theme
+#include /usr/share/taskwarrior/solarized-dark-256.theme
+#include /usr/share/taskwarrior/solarized-light-256.theme
+#include /usr/share/taskwarrior/no-color.theme
+
+# -------------------------------------------------------------
+# in vim, :set nowrap to view lines horizontally
+
+report.minimal.labels=ID,Project,Description
+report.minimal.columns=id,project,description.count
+
+
+
+report.simple.description=Simpler description but shows log
+report.simple.labels=ID,Project,Description,Tags
+report.simple.columns=id,project,description,tags.count
+report.simple.filter=status:pending
+
+report.sicomp.labels=ID,End,Project,Description,Tags
+report.sicomp.columns=id,end,project,description,tags.count
+report.sicomp.description=Simpler description but shows log
+report.sicomp.filter=status:completed
+
+# report.durmin.labels          =ID, UUID,       dTs,       Sch,                Project, Description
+# report.durmin.columns         =id, uuid.short, start.age, scheduled.relative, project, description.count
+report.durmin.labels          =ID,UUID,dTs,Sch,Project,Description
+report.durmin.columns         =id,uuid.short,start.age,scheduled.relative,project,description.count
+report.durmin.description     =Minimal details of tasks (With Duration)
+report.durmin.filter          =status:pending or status:waiting
+report.durmin.sort            =project+/,description+
+
+# report.durlog.labels          =ID, UUID,       dTs,       Sch,                Project, Description
+# report.durlog.columns         =id, uuid.short, start.age, scheduled.relative, project, description.count
+report.durlog.labels          =ID,UUID,dTs,Sch,Project,Description
+report.durlog.columns         =id,uuid.short,start.age,scheduled.relative,project,description.combined
+report.durlog.description     =Minimal details of tasks (With Duration)
+report.durlog.filter          =status:pending or status:waiting
+report.durlog.sort            =project+/,description+
+
+
+# report.compmin.labels         =ID, UUID,       Compl,     Sch,                Due, Age,       R,               Project,   Description
+# report.compmin.columns        =id, uuid.short, end,       scheduled.relative, due, entry.age, recur.indicator, project,   description.count
+report.compmin.labels         =ID,UUID,Compl,Sch,Due,Age,R,Project,Description
+report.compmin.columns        =id,uuid.short,end,scheduled.relative,due,entry.age,recur.indicator,project,description.count
+report.compmin.description    =Minimal complete view
+report.compmin.filter         =status:completed
+report.compmin.sort           =end-/,project+/,description+
+
+
+# report.logmin.labels          =UUID,       Compl,     dTs,       Sch,                Due,          Project, Description
+# report.logmin.columns         =uuid.short, end,       start.age, scheduled.relative, due.relative, project, description.count
+report.logmin.labels          =UUID,Compl,dTs,Sch,Due,Project,Description
+report.logmin.columns         =uuid.short,end,start.age,scheduled.relative,due.relative,project,description.count
+report.logmin.description     =Minimal details of tasks (With Duration)
+report.logmin.filter          =-inv and (status:pending or status:waiting or status:completed)
+report.logmin.sort            =end-/,start+/,project+/,description+
+
+# report.curmin.labels          =UUID,       Compl,     dTs,       Sch,                Due,          Project, Description
+# report.curmin.columns         =uuid.short, end,       start.age, scheduled.relative, due.relative, project, description.count
+report.curmin.labels          =UUID,Compl,dTs,Sch,Due,Project,Description
+report.curmin.columns         =uuid.short,end,start.age,scheduled.relative,due.relative,project,description.count
+report.curmin.description     =Minimal details of tasks (With Duration)
+report.curmin.filter          =start.not: or -inv and (status:pending or status:waiting or status:completed and end.after:now-1wk)
+report.curmin.sort            =end-/,start+/,priority+/,due+/,scheduled+,project+/,description+
+
+# report.curmin-f.labels          =UUID,       Compl,     dTs,       Sch,                Due,          Project, Description
+# report.curmin-f.columns         =uuid.short, end,       start.age, scheduled.relative, due.relative, project, description.count
+report.curmin-f.labels          =UUID,Compl,dTs,Sch,Due,Project,Description
+report.curmin-f.columns         =uuid.short,end,start.age,scheduled.relative,due.relative,project,description.count
+report.curmin-f.description     =Minimal details of tasks (With Duration)
+report.curmin-f.filter          =start.not: or -inv and (status:pending or status:waiting or status:completed and end.after:now-1wk) and (sch.after:now-1wk or pri:H) and status:pending
+report.curmin-f.sort            =end-/,start+/,priority+/,due+/,scheduled+,project+/,description+
+
+# report.modmin.labels          =UUID,       Mod.          Compl,     dTs,       Sch,                Project, Description
+# report.modmin.columns         =uuid.short, modified.age, end,       start.age, scheduled.relative, project, description.count
+report.modmin.labels          =UUID,Mod,Compl,dTs,Sch,Project,Description
+report.modmin.columns         =uuid.short,modified.age,end,start.age,scheduled.relative,project,description.count
+report.modmin.description     =Minimal details of tasks (With Duration)
+report.modmin.filter          =-inv and (status:pending or status:waiting or status:completed)
+report.modmin.sort            =end-/,modified-/,project+/,description+
+
+# report.logall.labels          =UUID,       Compl,     dTs,       Sch,                Project, Description
+# report.logall.columns         =uuid.short, end,       start.age, scheduled.relative, project, description.combined
+report.logall.labels          =UUID,Compl,dTs,Sch,Project,Description
+report.logall.columns         =uuid.short,end,start.age,scheduled.relative,project,description.combined
+report.logall.description     =Minimal details of tasks (With Duration)
+report.logall.filter          =status:pending or status:waiting or status:completed
+report.logall.sort            =end-/,project+/,description+
+
+
+# report.tagmin.labels          =UUID,       Compl,     dTs,       Mod,          Sch,                Tags,      Project, Description
+# report.tagmin.columns         =uuid.short, end,       start.age, modified.age, scheduled.relative, tags.list, project, description.count
+report.tagmin.labels          =UUID,Compl,dTs,Mod,Sch,Tags,Project,Description
+report.tagmin.columns         =uuid.short,end,start.age,modified.age,scheduled.relative,tags.list,project,description.count
+report.tagmin.description     =Minimal details of tasks (With Duration)
+report.tagmin.filter          =status:pending or status:waiting or status:completed
+report.tagmin.sort            =end-/,modified-/,tags-/,project+/,description+
+
+
+# report.delmin.labels          =UUID,       Compl,     dTs,       Sch,                Deps,              Project, Description
+# report.delmin.columns         =uuid.short, end,       start.age, scheduled.relative, depends.indicator, project, description.count
+report.delmin.labels          =UUID,Compl,dTs,Sch,Deps,Project,Description
+report.delmin.columns         =uuid.short,end,start.age,scheduled.relative,depends.indicator,project,description.count
+report.delmin.description     =Minimal details of tasks (With Duration)
+report.delmin.filter          =status:deleted
+report.delmin.sort            =end-/,project+/,description+
+
+
+# report.estmin.labels          =UUID,       Compl,     dTs,       Size, Put,    Est,    Sch,                Deps,              Project, Description
+# report.estmin.columns         =uuid.short, end,       start.age, size, put20m, est20m, scheduled.relative, depends.indicator, project, description.count
+report.estmin.labels          =UUID,Compl,dTs,Siz,Put,Est,Sch,Deps,Project,Description
+report.estmin.columns         =uuid.short,end,start.age,size,put20m,est20m,scheduled.relative,depends.indicator,project,description.count
+report.estmin.description     =Minimal details of tasks (With Duration)
+report.estmin.filter          =status:pending or status:waiting or status:completed
+report.estmin.sort            =end-/,project+/,description+
+
+
+# report.inv.labels          =UUID,       Compl,     dTs,       Sch,                Due,          Project, Tags, Description
+# report.inv.columns         =uuid.short, end,       start.age, scheduled.relative, due.relative, project, tags, description.count
+report.inv.labels          =UUID,Compl,dTs,Sch,Due,Project,Tags,Description
+report.inv.columns         =uuid.short,end,start.age,scheduled.relative,due.relative,project,tags,description.count
+report.inv.description     =Minimal details of tasks (With Duration)
+report.inv.filter          =+inv and (status:pending or status:waiting or status:completed and end.after:now-1wk)
+report.inv.sort            =end-/,start+/,project+/,tags+/,description+
+
+# report.archived.labels          =UUID,       Compl,     dTs,       Sch,                Deps,              Project, Description
+# report.archived.columns         =uuid.short, end,       start.age, scheduled.relative, depends.indicator, project, description.count
+report.archived.labels          =UUID,Compl,dTs,Sch,Deps,Project,Description
+report.archived.columns         =uuid.short,end,start.age,scheduled.relative,depends.indicator,project,description.count
+report.archived.description     =Minimal details of tasks (With Duration)
+report.archived.filter          =+archived and (status:pending or status:waiting or status:completed)
+report.archived.sort            =end-/,project+/,description+
+
+report.later.labels          =UUID,Compl,dTs,Sch,Deps,Project,Description
+report.later.columns         =uuid.short,end,start.age,scheduled.relative,depends.indicator,project,description.count
+report.later.description     =Minimal details of tasks (With Duration)
+report.later.filter          =+later and -archived and (status:pending or status:waiting or status:completed and end.after:now-1wk)
+report.later.sort            =end-/,project+/,description+
+
+# -------------------------------------------------------------
+# UDA
+
+# Block - Estimation of Time units
+
+uda.blksiz.type=numeric
+uda.blksiz.label=BlkSiz
+uda.blksiz.default=20
+
+uda.blkest.type=numeric
+uda.blkest.label=Est
+
+uda.blkput.type=numeric
+uda.blkput.label=Put
+
+# the lower, the more urgent. 1=day, 2=week, 3=2week. 
+uda.blkfilt.type=numeric
+uda.size.label=BlockFilter
+
+uda.blkestf.type=numeric
+uda.blkestf.label=EstF
+
+uda.blkputf.type=numeric
+uda.blkputf.label=PutF
+
+# task size -- Agile
+
+uda.size.type=string
+uda.size.label=Siz
+uda.size.values=S,M,L,XL,2XL
+
+# collection of notes or resources linked to a task
+uda.notelinks.type=string
+uda.notelinks.label=NLinks
+
+# colletion of issue ids for other issue trackers
+uda.issuelinks.type=string
+uda.issuelinks.label=ILinks
+
+# associated tasks that may describe it more such as ideas, project milestones, etc
+uda.linkedto.type=string
+uda.linkedto.label=LinkedTo
+
+# subtask identification -- children point to parent, parent points to children 
+uda.childof.type=string
+uda.issuelinks.label=Parent
+uda.children.type=string
+uda.children.label=Children
+uda.childdepth.type=numeric
+uda.childdepth.label=Ancestors
+uda.childdepth.default=0
+
+
+# Z priority is the same as L, just clearly in alphabetical order
+uda.priority.values=H,M,L,Z
+color.uda.priority.Z=color245
+urgency.uda.priority.Z.coefficient=1.8
+
+# -------------------------------------------------------------
+
+# date format config
+dateformat=[m/D]
+
+

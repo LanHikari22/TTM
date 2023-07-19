@@ -1,0 +1,64 @@
+#!/bin/bash
+# Fixes:
+# - TODO: Fix extract_uuid_from_main_vit_window failing on a vit with only one item
+# - Refrained from adding automatic Enter due to tmux lag. Is there a way to handle this better?
+
+
+# $1 - target pane -- unused. Ex: notes:1.2
+a_target_pane=$1
+a_cur_pane=$TMUX_PANE
+
+log_module='tm.vit-filter-open'
+log_debug_active=1
+source lib-tm-common
+
+uuid="$(extract_uuid_from_main_vit_window $a_cur_pane)" || assert_ok "$uuid"
+
+# all possible contexts
+read -r -d '' FILTER_CONTEXTS << EOM
+curmin
+allmin
+EOM
+
+# all possible filters to open
+read -r -d '' FILTER_CHOICES << EOM
+nosub
+none
+subtasks
+pri-H
+scheduled-week
+scheduled-today
+EOM
+
+# select the filter context we want
+user_context=$(echo "$FILTER_CONTEXTS" | fzf-tmux)
+if [[ -z "$user_context" ]]; then
+  log_info 'user cancelled action'
+  return
+fi
+
+# select the filter we want
+user_choice=$(echo "$FILTER_CHOICES" | fzf-tmux)
+if [[ -z "$user_choice" ]]; then
+  log_info 'user cancelled action'
+  return
+fi
+
+tmux kill-window
+tmux new-window
+# sleep 1
+
+if [[ "$user_choice" == "nosub" ]]; then
+  tmux send-keys "vit $user_context start.not: or childof:"
+elif [[ "$user_choice" == "none" ]]; then
+  tmux send-keys "vit $user_context"
+elif [[ "$user_choice" == "subtasks" ]]; then
+  tmux send-keys "vit $user_context start.not: or $uuid or childof.has:$uuid"
+elif [[ "$user_choice" == "pri-H" ]]; then
+  tmux send-keys "vit $user_context start.not: or pri:H"
+elif [[ "$user_choice" == "scheduled-week" ]]; then
+  tmux send-keys "vit $user_context 'start.not: or (sch.after:$(date -dmonday +%Y-%m-%d) and sch.before:$(date -dnext-monday +%Y-%m-%d) and status:pending)'"
+elif [[ "$user_choice" == "scheduled-today" ]]; then
+  tmux send-keys "vit $user_context 'start.not: or +G00 or (sch.after:today and sch.before:today+1d+1h and status:pending)'"
+fi
+

@@ -1,0 +1,3 @@
+# log an entry with the virtual taga +tL +today +week
+echo "$@"
+# task add +tL +today +week "$@"

@@ -1,0 +1,207 @@
+#!/bin/python3
+
+import os
+import pandas as pd
+import numpy as np
+import pipe
+from pipe import Pipe
+from typing import List, Tuple
+
+import visidata
+from visidata import (  # ColumnAttr,; options,
+    Column,
+    ItemColumn,
+    TableSheet,
+    TypedExceptionWrapper,
+    VisiData,
+    date,
+    stacktrace,
+    Sheet,
+    vd,
+    ALT,
+    Sheet,
+    BaseSheet
+)
+
+options.disp_date_fmt="%Y-%m-%dT%H:%M:%SZ"
+
+# Util --------------------------------------------------------------------------------------------
+def lset(col, idx, val):
+    if col == '':
+        #col = vd.sheet.cursorCol
+        col = vd.sheet.cursorCell.value
+
+        if type(col) != list:
+            raise Exception('Could not find list column at cell')
+
+    col = col.copy()
+
+    if type(val) is list:
+        for i, v in enumerate(val):
+            col[idx + i] = v
+    else:
+        col[idx] = val
+
+    return col
+
+def linc(col, idx, cnt=1):
+    col = col.copy()
+
+    if type(cnt) is list:
+        for i, c in enumerate(cnt):
+            col[idx + i] += c
+    else:
+        col[idx] += cnt
+
+    return col
+
+
+class Common:
+    @staticmethod
+    def sheet_update_cells(sheet: TableSheet, rows: List[dict]) -> int:
+        modified = 0
+        add_columns = []
+        for r, row in enumerate(rows):
+            for c, col in enumerate(row.keys()):
+                new_col = col not in sheet.rows[r]
+                new_cell = rows[r][col]
+
+                if new_col and col not in add_columns:
+                    # flag column to be added
+                    add_columns.append(col)
+                else:
+                    # edit row value in column
+                    old_cell = sheet.rows[r][col]
+
+                    different = old_cell != new_cell
+                    if hasattr(different, 'any'):
+                        different = different.any()
+
+                    if different:
+                        sheet.columns[c].setValue(row=sheet.rows[r], val=new_cell)
+                        # sheet.editCell(rowidx=r, vcolidx=c, value=new_cell)
+                        modified += 1
+        
+        for col in add_columns:
+            new_col = []
+            new_col_2 = {}
+            # sheet.addColumn(sheet.columns[0])
+            for r, row in enumerate(rows):
+                # sheet.columns[-1].setValue(row=sheet.rows[r], val=row[col])
+                new_col.append(row[col])
+                new_col_2[r] = row[col]
+
+            sheet.addColumn(Column(col, type=type(new_col[0]), getter=lambda col, row: new_col[0]))
+            sheet.recalc()
+                    
+            modified += 1
+
+                    
+        return modified
+
+    @staticmethod
+    def is_path_sheet(sheet):
+        return hasattr(sheet, 'source') and type(sheet.source) is visidata.path.Path
+
+# Commands ----------------------------------------------------------------------------------------
+class SelectCommand:
+    def key(self) -> str: raise NotImplementedError()
+    def name(self) -> str: raise NotImplementedError()
+    def help(self) -> str: raise NotImplementedError()
+    def run(self, sheet): raise NotImplementedError()
+
+    class Error(Exception):
+        pass
+
+class Commands:
+    class SaveSheet(SelectCommand):
+        def __init__(self, key: str, exec=['with_file_source']):
+            self._key = key
+            self.exec = exec
+
+        def key(self) -> str: return self._key
+
+        def name(self) -> str: 
+            if 'with_file_source' in self.exec:
+                return 'SaveSheetWithFileSource'
+            
+            raise SelectCommand.Error(f'{self.key()}: No command to execute.')
+
+        def help(self) -> str: 
+            if 'with_file_source' in self.exec:
+                return 'Finds the sheet with a string source resembling a path and saves that sheet'
+            
+            raise SelectCommand.Error(f'{self.key()}: No command to execute.')
+            
+        
+        def run_with_file_source(self, sheet):
+            # A = vd.sheets
+            # B = vd.sheets | pipe.map(Common.is_source_sheet) | Pipe(list)
+            # vd.view({'A': A, 'B': B})
+            # return
+
+            try:
+                path_sheet = vd.sheets | pipe.where(Common.is_path_sheet) | Pipe(next)
+            except StopIteration:
+                raise SelectCommand.Error('Could not find path sheet')
+
+            vd.saveSheets(vd.inputPath("save to: ", value=path_sheet.source.given), path_sheet, 
+                          confirm_overwrite=options.confirm_overwrite)
+            
+
+        def run(self, sheet):
+            if 'with_file_source' in self.exec:
+                return self.run_with_file_source(sheet)
+
+            raise SelectCommand.Error('No command executed')
+
+# -------------------------------------------------------------------------------------------------
+
+import importlib.util
+import sys
+
+def import_from_path(module_name, module_path):
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    spec_module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = spec_module
+    spec_module.module_input = globals()
+    spec.loader.exec_module(spec_module)
+
+    return spec_module
+
+@Sheet.api
+def sc(sheet):
+    key = vd.input('Command (H): ').strip()
+
+    commands = [
+        Commands.SaveSheet('s', exec=['with_file_source']),
+    ]
+
+    visidata_ttm = import_from_path('visidata_ttm', '/home/lan/src/scripts/ttm-tools/visidata_ttm.py')
+    commands.extend(visidata_ttm.commands)
+
+    for cmd in commands:
+        if cmd.key() == key:
+            return cmd.run(sheet)
+    else:
+        if key == 'H':
+            def help_row(key: str, name: str, help: str):
+                return {'Key': key, 'Command': name, 'Help': help}
+
+            _help = [help_row('H', 'Help', 'Displays this help menu sheet')]
+
+            for cmd in commands:
+                _help.append(help_row(cmd.key(), cmd.name(), cmd.help()))
+
+            vd.view(_help)
+        else:
+            raise SelectCommand.Error(f'Unknown command: {key}')
+    
+    return None
+
+
+# -------------------------------------------------------------------------------------------------
+BaseSheet.addCommand(None, 'sc', 'sc()', 'selects a command from an internal menu')
+BaseSheet.bindkey(ALT+'n', 'sc')
+
+#visidata_ttm = import_from_path('visidata_symbol_db_api', '/home/lan/src/work/clt/guest/source/calltree/calltree/visidata_symbol_db_api.py')

@@ -1,0 +1,124 @@
+#!/bin/bash
+
+# in vit and tmux, press e to open task editor 
+# and run "prefix :ru tm.vit-open-notes {this_pane} {target-pane}"
+# the UUID is figured out from the vit window
+
+# $1 - target tmux pane. Ex: somesession:1.1
+a_target_pane=$1
+a_cur_pane=$TMUX_PANE
+
+log_module='tm.vit-new-subtask'
+log_info_active=1
+log_debug_active=1
+log_trace_active=0
+source lib-tm-common
+
+# extract new task id
+function parse_new_task_id() {
+  # "Duplicated task {task_id} '{task_name}'. Creates task {new_task_id}. Duplicated 1 task."
+  while read -r data; do
+    echo $data | cut -d"'" -f3 | cleanup_spaces | cut -d' ' -f4 | cut -d'.' -f1
+  done
+}
+
+log_info "executed script"
+log_trace 'pwd: ' $(pwd), 'TASKRC: ' $TASKRC
+
+# extract uuid and duplicate --------------------------------------------------
+uuid=$(extract_uuid_from_main_vit_window $a_cur_pane) || assert_ok "$uuid"
+log_trace "uuid: $uuid", "task _get $uuid.uuid": $(TASKRC=$TASKRC task _get $uuid.uuid)
+
+# log_error "debug test. Parsed: \"$uuid\""
+# exit 1
+
+result=$(task $uuid dupl)
+# result=" Duplicated task 21 'test creating subtask'. Created task 25. Duplicated 1 task. "
+if [[ -z $result ]]; then
+  log_error "failed to duplicate task \"$uuid\""
+  exit 1
+fi
+
+# ------------------------------------------------------------------------------
+new_task=$(echo $result | parse_new_task_id)
+if [[ -z $new_task ]]; then
+  log_error "failed to parse duplicated task id from \"$result\""
+  exit 1
+fi
+log_trace new_task: $new_task
+
+new_uuid=$(task _get $new_task.uuid | shorten_uuid)
+if [[ -z $new_uuid ]]; then
+  log_error "failed to parse duplicated task uuid from $new_task"
+  exit 1
+fi
+log_trace "new_uuid:" $new_uuid
+
+# if the task starts with the root parent uuid, then append {.child_count} on each depth level
+desc=$(task _get $uuid.description)
+desc_prefix=$(echo $desc | cut -d' ' -f1)
+desc_uuid=$(echo $desc_prefix | cut -d'.' -f1)
+log_trace desc: $desc ' -> '  desc_prefix'?': $desc_prefix, desc_uuid'?': $desc_uuid
+
+# if no valid UUID found as prefix, these are used to signal tasks with hierarchy. add one to original task.
+if ! check_valid_uuid $desc_uuid; then
+  log_trace "modifying task description to include its uuid prefix"
+  result=$(task $uuid modify "description:\"$uuid $desc\"")
+  if [[ -z $result ]]; then
+    log_error "failed to append uuid to description of task $uuid"
+    exit 1
+  fi
+
+  new_desc=$(task _get $uuid.description)
+  log_debug "modified task $uuid: Description \"$desc\" -> \"$new_desc\""
+
+  #reparse new description
+  desc=$(echo $new_desc)
+  desc_prefix=$(echo $desc | cut -d' ' -f1)
+  desc_uuid=$(echo $desc_prefix | cut -d'.' -f1)
+  log_trace desc: $desc ' -> '  desc_prefix'?': $desc_prefix, desc_uuid'?': $desc_uuid
+
+  if ! check_valid_uuid $desc_uuid; then
+    log_error "failed to append uuid to description of task $uuid"
+    exit 1
+  fi
+fi
+
+# ------------------------------------------------------------------------------
+children=$(task _get $uuid.children)
+children+="$new_uuid,"
+children_arr=($(echo $children | tr ',' ' '))
+child_count=${#children_arr[@]}
+child_count=$(printf %02d "$child_count")
+log_trace children: ${children_arr[@]}, child_count: $child_count
+
+if check_valid_uuid $desc_uuid; then
+# if [[ $(task _get $desc_uuid.uuid | shorten_uuid) == $desc_uuid ]]; then
+  new_desc=$(echo $desc_prefix.$child_count $(echo $desc | cut -d' ' -f1 --complement): TODO)
+else
+  new_desc=$(echo $desc: TODO)
+fi
+log_trace desc: $desc
+log_trace new_desc: $new_desc
+# ------------------------------------------------------------------------------
+  
+# figure out child depth level
+ancestors=$(echo $(task _get $uuid.childof)$uuid,)
+ancestors_arr=($(echo $ancestors | tr ',' ' '))
+childdepth=${#ancestors_arr[@]}
+log_trace ancestors: $ancestors, childdepth: $childdepth
+
+log_debug "(child_count: $child_count) $new_desc"
+
+# modify the task and subtask so they point to each other
+
+task $uuid modify "children:$children"
+task $new_uuid modify "childof:$ancestors"
+task $new_uuid modify "children:"
+task $new_uuid modify "childdepth:$childdepth"
+task $new_uuid modify "description:$new_desc"
+
+# TODO: denotate all (maybe? it can be useful to preserve some annotations)
+
+# output the created task
+echo $new_uuid

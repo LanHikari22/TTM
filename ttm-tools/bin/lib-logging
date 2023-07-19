@@ -1,0 +1,74 @@
+#!/bin/bash
+# implements some basic logging
+
+COL_RED='\e[0;31m'
+COL_GREEN='\e[0;32m'
+COL_YELLOW='\e[0;33m'
+COL_BLUE='\e[0;34m'
+COL_PURPLE='\e[0;35m'
+COL_CYAN='\e[0;36m'
+COL_NC='\e[0m' # No Color
+
+function get_log_timestamp() {
+  echo $(date -I'seconds' | tr 'T' ' ' | cut -d'-' -f4 --complement)
+}
+
+function log_assert_prereq() {
+  if [[ -z $log_debug_active || -z $log_module || -z $log_file ]]; then
+    echo 'error: requirements for logging not met'
+    return $EC_PREREQ_ERROR
+  fi
+}
+
+# needs $log_file configured
+# needs $log_module configured
+# needs $log_info_active configured as 1 to take effect
+# input: message
+function log_info() {
+  log_assert_prereq
+  if [[ $log_info_active != 0 ]]; then
+    echo -e $(get_log_timestamp) "- $log_module - ${COL_CYAN}INFO${COL_NC} -" $@ >> $log_file
+    echo -e "info($log_module):" $@ > /dev/stderr
+  fi
+
+}
+
+# needs $log_file configured
+# needs $log_module configured
+# needs $log_debug_active configured as 1 to take effect
+# input: message
+function log_debug() {
+  log_assert_prereq
+  if [[ $log_debug_active != 0 ]]; then
+    echo -e $(get_log_timestamp) "- $log_module - ${COL_PURPLE}DEBUG${COL_NC} -" $@ >> $log_file
+    echo -e "debug($log_module):" $@ > /dev/stderr
+  fi
+}
+
+# needs $log_file configured
+# needs $log_module configured
+# needs $log_trace_active configured as 1 to take effect
+# input: message
+function log_trace() {
+  log_assert_prereq
+  if [[ $log_trace_active != 0 ]]; then
+    echo -e $(get_log_timestamp) "- $log_module - ${COL_YELLOW}TRACE${COL_NC} -" $@ >> $log_file
+    echo -e "debug($log_module):" $@ > /dev/stderr
+  fi
+}
+
+# needs $log_file configured
+# needs $log_module configured
+# input: message
+function log_error() {
+  log_assert_prereq
+  echo -e $(get_log_timestamp) "- $log_module - ${COL_RED}ERROR${COL_NC} -" $@ >> $log_file
+  echo -e "error($log_module):" $@
+}
+
+# makes sure the return value $? is zero or prints input as error message and exits with $?
+# input: message
+# ex: false || assert_ok "error: use true instead of false"
+function assert_ok() {
+  retval=$? && [[ $? != EC_OK ]] && echo $@ && exit $retval
+}

@@ -1,0 +1,15 @@
+---
+database_file: "/root/.task/timetrap.db"
+round_in_seconds: 900
+append_notes_delimiter: " "
+formatter_search_paths:
+- "/root/.timetrap/formatters"
+default_formatter: text
+auto_sheet: dotfiles
+auto_sheet_search_paths:
+- "/root/.timetrap/auto_sheets"
+default_command:
+auto_checkout: false
+require_note: false
+note_editor: false
+week_start: Monday

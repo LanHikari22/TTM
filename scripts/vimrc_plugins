@@ -1,0 +1,34 @@
+call plug#begin('~/.vim/plugged')
+
+"" Themes
+Plug 'morhetz/gruvbox'
+Plug 'drewtempelmeyer/palenight.vim'
+Plug 'altercation/vim-colors-solarized'
+
+"" Editing
+"Plug 'jiangmiao/auto-pairs'
+Plug 'preservim/nerdcommenter'											
+Plug 'yggdroot/indentLine'
+ 
+"" Navigation
+Plug 'preservim/nerdtree' 													
+Plug 'preservim/tagbar'															
+Plug 'junegunn/fzf', {'dir': '~/.fzf','do': './install --all'}
+Plug 'junegunn/fzf.vim'															
+Plug 'antoinemadec/coc-fzf'                         
+Plug 'justinmk/vim-sneak'                           
+
+"" UI
+Plug 'vim-airline/vim-airline'
+Plug 'tpope/vim-fugitive'
+Plug 'wincent/terminus'
+
+Plug 'tpope/vim-sensible'
+Plug 'tpope/vim-obsession'
+Plug 'tpope/vim-repeat'
+Plug 'svermeulen/vim-macrobatics'                   " see config below
+
+call plug#end()
+
+silent! :PlugInstall
+qa!

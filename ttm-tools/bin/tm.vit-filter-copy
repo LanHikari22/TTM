@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# $1 - target pane -- unused. Ex: notes:1.2
+a_target_pane=$1
+a_cur_pane=$TMUX_PANE
+
+log_module='tm.vit-filter-copy'
+log_debug_active=1
+source lib-tm-common
+
+current_line="$(tmux capture-pane -t "$a_cur_pane" -p | head -n1 | tr -s ' ')"
+
+current_line="$(echo $current_line | cut -d' ' -f3-)"
+current_line="$(echo $current_line | awk -F ' vit' '{print $1}')"
+
+echo "( $current_line )" | tr --d '\n' | tmux loadb - 

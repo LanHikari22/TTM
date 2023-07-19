@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# $2 - target pane id. <session>:<windows>.<pane>. ex: "notes:1.1"
+# $3... - command
+a_target_pane=$2
+shift
+shift
+a_command=$@
+
+tmux send-keys -t "$a_pane" C-z "$a_command" Enter

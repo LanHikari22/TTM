@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# in vit and tmux, press e to open task editor and run "prefix :ru tm.vit-open-notes {this_pane} {target-pane}"
+# the uuid is figured out from the vit window
+
+# This script is responsible for reordering events for calcure based on date and time blocks.
+
+# $1 - target pane -- unused. Ex: notes:1.2
+a_target_pane=$1
+a_cur_pane=$TMUX_PANE
+
+log_module='tm.calcure-update'
+log_info_active=1
+log_debug_active=1
+log_trace_active=1
+source lib-tm-common
+
+#uuid=$(extract_uuid_from_main_vit_window $a_cur_pane) || assert_ok "$uuid"
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}"  )" &> /dev/null && pwd )
+EVENTS_CSV="$HOME/.task/schedule/events.csv"
+
+# reorder events
+python3 "$SCRIPT_DIR/tm.calcure-update.py" "$EVENTS_CSV" 'reorder-events'
+script_status=$?
+echo status: $script_status
+

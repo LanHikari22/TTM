@@ -1,0 +1,288 @@
+
+# [Created by task 2.5.1 7/26/2021 07:51:49]
+# Taskwarrior program configuration file.
+# For more documentation,see http:#taskwarrior.org or try 'man task','man task-color',
+# 'man task-sync' or 'man taskrc'
+
+# Here is an example of entries that use the default,override and blank values
+#   variable=foo   -- By specifying a value,this overrides the default
+#   variable=      -- By specifying no value,this means no default
+#   #variable=foo  -- By commenting out the line,or deleting it,this uses the default
+
+# Use the command 'task show' to see all defaults and overrides
+
+
+
+# Files
+data.location=~/.task
+
+# Color theme (uncomment one to use)
+#include /usr/share/taskwarrior/light-16.theme
+#include /usr/share/taskwarrior/light-256.theme
+#include /usr/share/taskwarrior/dark-16.theme
+#include /usr/share/taskwarrior/dark-256.theme
+#include /usr/share/taskwarrior/dark-red-256.theme
+#include /usr/share/taskwarrior/dark-green-256.theme
+#include /usr/share/taskwarrior/dark-blue-256.theme
+#include /usr/share/taskwarrior/dark-violets-256.theme
+#include /usr/share/taskwarrior/dark-yellow-green.theme
+#include /usr/share/taskwarrior/dark-gray-256.theme
+#include /usr/share/taskwarrior/dark-gray-blue-256.theme
+#include /usr/share/taskwarrior/solarized-dark-256.theme
+#include /usr/share/taskwarrior/solarized-light-256.theme
+#include /usr/share/taskwarrior/no-color.theme
+
+defaultwidth=$COLUMNS
+
+# -------------------------------------------------------------
+# - Sort -
+# -------------------------------------------------------------
+
+
+
+
+
+
+##define   ,end+/,end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+
+
+
+# -------------------------------------------------------------
+# - Filter -
+# -------------------------------------------------------------
+
+
+
+
+#        ((status:pending or status:waiting) or (status:completed and end.after:now-1wk))
+# -------------------------------------------------------------
+# - Columns/Labels -
+# -------------------------------------------------------------
+
+# in vim,:set nowrap to view lines horizontally
+# -------------------------------------------------------------
+# - Main Reports -
+# -------------------------------------------------------------
+
+report.curmin.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.curmin.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.curmin.description     =Current Tasks in minimum entry style (no logs)
+report.curmin.filter          =start.not: or ((-inv and -ar) and (status:pending or status:waiting))
+report.curmin.sort            =+++ ,end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+,
+
+report.invmin.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.invmin.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.invmin.description     =Displays Tasks (including ones marked -inv) in minimum entry style
+report.invmin.filter          =start.not: or ((status:pending or status:waiting) and +inv)
+report.invmin.sort            =+++ ,end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+,
+
+report.armin.labels           =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.armin.columns          =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.armin.description      =Displays Tasks (including ones marked -inv) in minimum entry style
+report.armin.filter           =start.not: or ((status:pending or status:waiting) and +ar)
+report.armin.sort             =+++ ,end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+,
+
+report.allmin.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.allmin.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.allmin.description     =All Tasks (no filters) in minimum entry style
+report.allmin.filter          =
+report.allmin.sort            =status-/,+++ ,end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+,
+
+report.allcur.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.allcur.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.allcur.description     =All Tasks (no filters except not completed) in minimum entry style
+report.allcur.filter          =start.not: or (status:pending or status:waiting)
+report.allcur.sort            =status-/,+++ ,end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+,
+
+# -------------------------------------------------------------
+# - Alternative Analysis -
+# -------------------------------------------------------------
+
+# -------------------------------------------------------------
+# - Alternative Sortings -
+# -------------------------------------------------------------
+
+report.nosort.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.nosort.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.nosort.description     =All Tasks (no filters except not completed) in minimum entry style
+report.nosort.filter          =start.not: or (status:pending or status:waiting)
+report.nosort.sort            =
+
+report.sortdue.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.sortdue.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.sortdue.description     =Curretn tasks,sorted by due date
+report.sortdue.filter          =start.not: or ((-inv and -ar) and (status:pending or status:waiting) and due.not:)
+report.sortdue.sort            =+++ ,end+/,start+/,desort-/,due+/,priority+/,ppri+/,gcode+/,gpri+/,scheduled+/,project+/,description+
+
+report.sortest.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.sortest.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.sortest.description     =Current Tasks displaying their estimated time to completion
+report.sortest.filter          =start.not: or ((-inv and -ar) and (status:pending or status:waiting) and blkest.not:)
+report.sortest.sort            =+++ ,end+/,start+/,desort-/,blkest+/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+
+
+report.sortpri.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.sortpri.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.sortpri.description     =Sort report by ppri
+report.sortpri.filter          =start.not: or ((-inv and -ar) and (status:pending or status:waiting) and ppri.not:)
+report.sortpri.sort            =+++ ,end+/,start+/,desort-/,ppri+/,priority+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+
+
+
+# -------------------------------------------------------------
+# - Complete Reports -
+# -------------------------------------------------------------
+
+report.wkdone.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.wkdone.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.wkdone.description     =Completed Tasks within last week
+report.wkdone.filter          =start.not: or (status:completed and end.after:now-1wk)
+report.wkdone.sort            =+++  ,end+/,
+
+report.2wkdone.labels         =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.2wkdone.columns        =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.2wkdone.description    =Completed Tasks within last 2 weeks
+report.2wkdone.filter         =start.not: or (status:completed and end.after:now-2wk)
+report.2wkdone.sort           =+++  ,end+/,
+
+report.modone.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.modone.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.modone.description     =Completed Tasks within last month
+report.modone.filter          =start.not: or (status:completed and end.after:now-1mo)
+report.modone.sort            =+++  ,end+/,
+
+report.3modone.labels         =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.3modone.columns        =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.3modone.description    =Completed Tasks within last month
+report.3modone.filter         =start.not: or (status:completed and end.after:now-3mo)
+report.3modone.sort           =+++  ,end+/,
+
+report.alldone.labels         =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.alldone.columns        =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.alldone.description    =Completed Tasks in minimum entry style (no logs)
+report.alldone.filter         =start.not: or (status:completed)
+report.alldone.sort           =+++  ,end+/,
+
+# -------------------------------------------------------------
+# - Other Reports -
+# -------------------------------------------------------------
+
+report.delmin.labels          =UUID,Compl,dTs,PPri,GPri,Sch,Due,Rem,Put,GCode,Project,Description
+report.delmin.columns         =uuid.short,end,start.age,ppri,gpri,scheduled.relative,due,blkrem,blkputcum,gcode,project,description.count
+report.delmin.description     =Deleted Tasks
+report.delmin.filter          =status:deleted
+report.delmin.sort            =+++ ,end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+,
+
+# -------------------------------------------------------------
+# - Inactive Reports -
+# -------------------------------------------------------------
+
+report.tagmin.labels          =UUID,Compl,dTs,Mod,Sch,Tags,Project,Description
+report.tagmin.columns         =uuid.short,end,start.age,modified.age,scheduled.relative,tags.list,project,description.count
+report.tagmin.description     =Minimal details of tasks (With Duration)
+report.tagmin.filter          =status:pending or status:waiting or status:completed
+report.tagmin.sort            =end-/,modified-/,tags-/,project+/,description+
+
+# -------------------------------------------------------------
+# UDA
+# -------------------------------------------------------------
+
+# (Calculated) Current Time performed against this task
+uda.blkput.type=numeric
+uda.blkput.label=Put
+
+# Manual Current time performed against this task. This will be added to tracked calculated time.
+uda.blkputman.type=numeric
+uda.blkputman.label=Put
+
+# Cumulative Time performed against this task (Including subtasks,put+sub)
+uda.blkputcum.type=numeric
+uda.blkputcum.label=Put
+
+# Estimated time to complete task (in multiples of some 20 minutes)
+uda.blkest.type=numeric
+uda.blkest.label=Est
+
+# (CalculateD) Remaining Estimated time to complete task (in multiples of some 20 minutes)
+uda.blkrem.type=numeric
+uda.blkrem.label=Est
+
+# Aggregate estimated time to complete task (Including subtasks,all+sub)
+uda.blkestcum.type=numeric
+uda.blkestcum.label=Est
+
+
+# task size -- Agile
+
+uda.size.type=string
+uda.size.label=Siz
+uda.size.values=S,M,L,XL,2XL
+
+# collection of notes or resources linked to a task
+uda.notelinks.type=string
+uda.notelinks.label=NLinks
+
+# colletion of issue ids for other issue trackers
+uda.issuelinks.type=string
+uda.issuelinks.label=ILinks
+
+# associated tasks that may describe it more such as ideas,project milestones,etc
+uda.linkedto.type=string
+uda.linkedto.label=LinkedTo
+
+# subtask identification -- children point to parent,parent points to children
+uda.childof.type=string
+uda.childof.label=Parent
+
+uda.children.type=string
+uda.children.label=Children
+
+uda.childdepth.type=numeric
+uda.childdepth.label=Ancestors
+uda.childdepth.default=0
+
+# task scheduling
+uda.expdur.type=numeric
+uda.expdur.label=expdur
+uda.expdur.default=0
+
+uda.durunit.type=string
+uda.durunit.label=durunit
+uda.durunit.values=1m,15m,20m,1h
+uda.durunit.default=1h
+
+# Z priority is the same as L,just clearly in alphabetical order
+uda.priority.values=H,M,L,Z
+color.uda.priority.Z=color245
+urgency.uda.priority.Z.coefficient=1.8
+
+# priority number. To order items within the same priority value
+uda.ppri.type=numeric
+uda.ppri.label=ppri
+uda.ppri.default=
+
+# Goal-relative priority number.
+uda.gpri.type=numeric
+uda.gpri.label=gpri
+uda.gpri.default=
+
+uda.state.type=string
+uda.state.default=
+
+# Goal Code. Different tasks can share this code as belonging to the same goal.
+# Typically used for tracking tasks that count within the same focus or time spending.
+# Can also be used to detonate milestones. It needs to have a unique extenstion for that.
+uda.gcode.type=string
+uda.gcode.label=GCode
+uda.gcode.default=
+
+# sort last
+uda.desort.type=string
+uda.desort.default=
+
+# -------------------------------------------------------------
+# Data formats
+# -------------------------------------------------------------
+
+# date format config
+# dateformat=[yMD a]
+# dateformat=[yWV a]
+# dateformat=y_WVa
+dateformat=yMD-WVa

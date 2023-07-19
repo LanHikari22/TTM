@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# ---  configuration ----------------------------------------
+function source_if_found() { [ -e "$1" ] && source "$1"; }
+source_if_found ~/.config/shell/secret.sh
+source_if_found ~/.config/shell/emojis.sh
+source_if_found ~/.config/shell/display.sh
+source_if_found ~/.config/shell/fzf.sh
+
+# --- Aliases -----------------------------------------------
+alias diff="diff -Naur --color=always"
+alias lsd="ls -d */"
+alias spring-run='mvn package && java -jar target/*.jar'
+alias tma='tmux attach -t base || tmux new -t base'
+alias vi='/usr/bin/vim'
+alias ipext='curl ipinfo.io/ip'
+
+# --- Functions ---------------------------------------------
+# type: (regex) -> pid[]
+function get-pid() { echo $(ps -aux | grep "$1" | tr -s ' ' | cut -d ' ' -f2); }
+function rgless() { rg --color=always "$1" | less -R; }
+
+# Print the name of the function calling me
+function func_name () {
+  if [[ -n $BASH_VERSION ]]; then
+    printf "%s\n" "${FUNCNAME[1]}"
+  else  # zsh
+    # Use offset:length as array indexing may start at 1 or 0
+    printf "%s\n" "${funcstack[@]:1:1}"
+  fi
+}
+
+## removes any nonprintable characters from a file
+## pipes the transformation to a tmp file to allow inplace modification
+function trim_nonprintable() {
+  local in_path=$1 
+  local out_path=$2
+  local tmp1=/tmp/$(func_name).1.$(date +%s)
+
+  cat $in_path \
+    | tr -d '\001'-'\011''\013''\014''\016'-'\037''\200'-'\377' \
+    > $tmp1 \
+  && cat $tmp1 \
+    > $out_path \
+  && rm $tmp1
+}
+
+function pdf_to_printable_text() {
+  local in_path=$1
+  local out_path=$2
+
+  pdftotext -layout $in_path $out_path \
+  && trim_nonprintable $out_path $out_path
+}
+
+function pdftotextmany() {
+  local files=$@
+
+  for f in $@; do
+    local f_txt=${f%.*}.txt
+    pdftotext -layout $f $f_txt \
+    && trim_nonprintable $f_txt $f_txt
+  done
+}
+
+## displays pdfs in a readable text format
+## if this gives trouble, displaying some text, consider using ocrmypdf
+## and search the OCR pdf
+function pdfvi() {
+  local in_path=$1
+  local tmp1=/tmp/$(func_name).1.$(date +%s)
+
+  pdf_to_printable_text $in_path $tmp1 \
+  && vi $tmp1 \
+  && rm $tmp1
+}
+
+source_if_found ~/.shellrc.local

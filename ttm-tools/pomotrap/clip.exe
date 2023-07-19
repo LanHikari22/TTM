@@ -1,0 +1,33 @@
+# Tool Installation
+* vscode
+  * https://code.visualstudio.com/download
+  * Could also be installed from https://my.visualstudio.com but it is an open source tool and should be identical
+* PuTTY
+  * Download from https://www.putty.org/
+  * Very standard and reliable, good to have and learn to use even when there are better alternatives.
+  * There are other PuTTY tools out there our team uses:
+    * Solar PuTTY: https://www.solarwinds.com/free*tools/solar*putty
+      * Nolan recommended this! Browser*like interface. Tabs and more intuitive session grouping and UI.
+    * MTPUTTY (Multi*Tabbed PuTTY): https://ttyplus.com/multi*tabbed*putty/
+      * Jyothsna recommended this! Similar to PuTTY but with better tabbing support.
+  * Sometimes I use PuTTY, but I mostly ssh from a local terminal to my remote instance. On windows, I use
+    WSL2 and tmux for this.
+* WinSCP: Download from https://winscp.net/eng/index.php
+
+* WSL2 (personal, non*conventional)
+  * installed by following instructions here: https://docs.microsoft.com/en*us/windows/wsl/install*win10
+  * why?
+    * I can't say this is necessary for remote development or our teammates, but it has 
+      a lot of pros which is why I install it on my windows machines for local development and tools.
+    * this is a lightweight local linux VM that has access to windows executables and the file system.
+    * A good substitute for putty, WinSCP, etc: With ssh, scp, sftp, and other utilites readily available. 
+    * I personally use it to provide me with linux tools in my windows machine. It can interact with my
+      local vscode and is a better environment for python scripting amongst other things.
+    * Because it is readily integrated with the windows filesystem, I have automation tools such as windows
+      notifications and reminders based on bash/python scripts.
+    * With tmux, I can also efficiently navigate between my local and remote VM environments. 
+      * tmux allows you to nest tmux servers. This means that I can organize local & remote sessions and
+        preserve progress on both my local and remote environment.
+   * I will have to follow up on some of the issues I raised IT tickets for (mostly certificate problems)
+* tmux, vim, git, curl, python3, etc: Provided with WSL2
+* I have my own plugins for vim, tmux, vscode, etc but I will need to make dedicated tutorials for these.

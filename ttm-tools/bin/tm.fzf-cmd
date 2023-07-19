@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# **NOTE** run this command with :ru -b 'tm.fzf-cmd {cur_pane} {target_pane}'. 
+#          -b to avoid tmux lockup
+
+# in vit and tmux, press e to open task editor and run "prefix :ru tm.vit-open-notes {this_pane} {target-pane}"
+# the UUID is figured out from the vit window
+
+# $1 - target tmux pane. Ex: somesession:1.1
+a_target_pane=$1
+a_cur_pane=$TMUX_PANE
+
+# source $HOME/.shellrc
+
+log_file=$HOME/.local/log/tm.fzf-cmd.log
+log_module='tm.fzf-cmd'
+log_debug_active=0
+source lib-tm-common
+
+$(debug_log "why can I not log?")
+
+bin_path=$HOME/.local/bin
+
+# command=$(compgen -c | fzf -q "tm.") # slow
+command=$(ls $bin_path | fzf-tmux -q "tm.")
+if [ -z $command ]; then
+  echo "error: could not find command"
+  exit 1
+fi
+
+$command $@
