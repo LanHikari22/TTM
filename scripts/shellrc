@@ -15,6 +15,13 @@ alias tma='tmux attach -t base || tmux new -t base'
 alias vi='/usr/bin/vim'
 alias ipext='curl ipinfo.io/ip'
 
+git config --global alias.lg "log --graph --oneline"
+git config --global alias.root 'rev-parse --show-toplevel'
+git config --global alias.st 'status'
+git config --global alias.br 'branch'
+git config --global alias.co 'checkout'
+git config --global alias.diffall 'status'
+
 # --- Functions ---------------------------------------------
 # type: (regex) -> pid[]
 function get-pid() { echo $(ps -aux | grep "$1" | tr -s ' ' | cut -d ' ' -f2); }

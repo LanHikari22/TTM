@@ -15,7 +15,6 @@ Plug 'preservim/nerdtree'
 Plug 'preservim/tagbar'															
 Plug 'junegunn/fzf', {'dir': '~/.fzf','do': './install --all'}
 Plug 'junegunn/fzf.vim'															
-Plug 'antoinemadec/coc-fzf'                         
 Plug 'justinmk/vim-sneak'                           
 
 "" UI
@@ -27,6 +26,8 @@ Plug 'tpope/vim-sensible'
 Plug 'tpope/vim-obsession'
 Plug 'tpope/vim-repeat'
 Plug 'svermeulen/vim-macrobatics'                   " see config below
+Plug 'chrisbra/Recover.vim'                         
+Plug 'kshenoy/vim-signature'
 
 call plug#end()
 

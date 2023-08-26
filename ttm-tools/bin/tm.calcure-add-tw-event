@@ -57,7 +57,7 @@ echo $event_csv >> $EVENTS_CSV
 
 # Sort events, fixing dummy row id also
 # reorder events
-python3 "$SCRIPT_DIR/tm.calcure-update.py" "$EVENTS_CSV" 'reorder-events'
+python3 "$SCRIPT_DIR/tmlib.calcure-update.py" "$EVENTS_CSV" 'reorder-events'
 script_status=$?
 echo re-order events status: $script_status
 

@@ -22,7 +22,7 @@ $(debug_log "why can I not log?")
 bin_path=$HOME/.local/bin
 
 # command=$(compgen -c | fzf -q "tm.") # slow
-command=$(ls $bin_path | fzf-tmux -q "tm.")
+command=$(ls $bin_path | fzf-tmux -q "'tm. ")
 if [ -z $command ]; then
   echo "error: could not find command"
   exit 1

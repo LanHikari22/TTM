@@ -18,9 +18,11 @@ RUN apt-get update && apt-get install -y \
   python3 \
   python3-pip
 
+#RUN apt-get update && apt-get install -y iputils-ping
+
 # Set up SSH
 RUN mkdir /var/run/sshd
-RUN echo 'root:pass' | chpasswd
+RUN echo 'root:root' | chpasswd
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 # SSH login fix. Otherwise user is kicked off after login
@@ -37,6 +39,21 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
 
 # Make zsh the default shell
 RUN chsh -s $(which zsh)
+
+# Setup custom zsh theme
+COPY scripts/robbyrussell-cust.zsh-theme /root/.oh-my-zsh/themes
+RUN sed -i 's/robbyrussell/robbyrussell-cust/g' /root/.zshrc
+RUN sed -i 's/plugins=(git)/plugins=(git mercurial zsh-autosuggestions zsh-syntax-highlighting zsh-vi-mode)/g' /root/.zshrc
+
+# Install zsh plugins
+RUN cd /root/.oh-my-zsh/plugins/ && git clone https://github.com/zsh-users/zsh-autosuggestions.git
+RUN cd /root/.oh-my-zsh/plugins/ && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git
+RUN cd /root/.oh-my-zsh/plugins/ && git clone https://github.com/jeffreytse/zsh-vi-mode.git
+RUN echo "source /root/.oh-my-zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> /root/.zshrc
+
+# Mounted volumes which may be git repos will be flagged by git for user ownership
+RUN echo "git config --global --add safe.directory /root/notes" >> /root/.zshrc
+RUN echo "git config --global --add safe.directory /root/.task" >> /root/.zshrc
 
 # Set the timezone
 ENV TZ=America/Chicago
@@ -74,6 +91,8 @@ RUN tmux start-server \
     && sleep 1 \
       && /root/.tmux/plugins/tpm/scripts/install_plugins.sh \
         && tmux kill-server
+RUN echo "export LC_ALL=en_IN.UTF-8" >> /root/.zshrc
+RUN echo "export LANG=en_IN.UTF-8" >> /root/.zshrc
 
 # Install Time and task management packages
 RUN mkdir /root/src
@@ -82,10 +101,10 @@ COPY ttm-tools /root/src/ttm-tools
 RUN cd /root/src/ttm-tools && ./release.sh --all -v
 #RUN cd /root/.task/taskrc/src && ./replace_system_taskrc.sh && yes | ./context.sh
 RUN cd /root/src/ttm-tools/taskrc/src && ./replace_system_taskrc.sh && yes | ./context.sh
+RUN task context proj
 RUN mkdir /root/.vit
 COPY scripts/vit_config.ini /root/.vit/config.ini
-RUN mkdir /root/.vim/colors
-COPY scripts/calcure_colors.vim /root/.vim/colors/calcure_colors.vim
+COPY scripts/vim-colors/ /root/.vim/colors/
 
 # Install timetrap (ruby)
 RUN apt-get update && apt-get install -y libsqlite3-dev
@@ -94,6 +113,7 @@ COPY scripts/timetrap.yml /root/.timetrap.yml
 
 # Install React Calendar
 RUN cd /root/src/ && git clone https://github.com/LanHikari22/react-calendar
+#RUN cd /root/src/ && git clone git@github.com:LanHikari22/react-calendar.git
 RUN cd /root/src/react-calendar && git checkout lan-dev && npm install
 
 # Create app directory

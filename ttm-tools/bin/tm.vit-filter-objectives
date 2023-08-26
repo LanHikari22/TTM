@@ -12,4 +12,4 @@ log_debug_active=1
 source lib-tm-common
 
 uuid=$(extract_uuid_from_main_vit_window $a_cur_pane) || assert_ok "$uuid"
-echo "task context obj && vit main $uuid or childof.endswith:$uuid, && task context cur" | tr --d '\n' | tmux loadb -
+echo "task context obj && vit obj $uuid or childof.endswith:$uuid, && task context proj" | tr --d '\n' | tmux loadb -

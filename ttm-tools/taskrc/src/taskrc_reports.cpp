@@ -2,19 +2,21 @@
 // -------------------------------------------------------------
 // - Sort -
 // -------------------------------------------------------------
-#define REPORT_SORT_TMPL1  end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+,
-#define REPORT_SORT_DUE_H  end+/,start+/,desort-/,due+/,priority+/,ppri+/,gcode+/,gpri+/,scheduled+/,project+/,description+
+#define REPORT_SORT_MAIN   end+/,start+/,desort-/,priority+/,ppri+/,due+/,modified-/,scheduled-/,gcode+/,gpri+/,project+/,description+,
+#define REPORT_SORT_MODIF  end+/,start+/,desort-/,modified-/,priority+/,ppri+/,due+/,scheduled-/,gcode+/,gpri+/,project+/,description+,
+#define REPORT_SORT_OBJ    end+/,start+/,desort-/,childdepth+/,priority+/,ppri+/,gpri+/,due+/,modified-/,scheduled-/,gcode+/,project+/,description+,
+#define REPORT_SORT_DUE_H  end+/,start+/,desort-/,due+/,priority+/,ppri+/,gcode+/,gpri+/,scheduled-/,project+/,description+
 #define REPORT_SORT_SCH_L  end+/,start+/,desort-/,scheduled-/,due+/,priority+/,ppri+/,gcode+/,gpri+/,project+/,description+,
-#define REPORT_SORT_EST_L  end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,blkest+/,description+
-#define REPORT_SORT_EST_H  end+/,start+/,desort-/,blkest+/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+
-#define REPORT_SORT_PRI_H  end+/,start+/,desort-/,ppri+/,priority+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+
-#define REPORT_SORT_GCODE  end+/,start+/,desort-/,gcode+/,gpri+/,priority+/,ppri+/,due+/,scheduled+/,project+/,description+,
+#define REPORT_SORT_EST_L  end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled-/,project+/,blkest+/,description+
+#define REPORT_SORT_EST_H  end+/,start+/,desort-/,blkest+/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled-/,project+/,description+
+#define REPORT_SORT_PRI_H  end+/,start+/,desort-/,ppri+/,priority+/,gcode+/,gpri+/,due+/,scheduled-/,project+/,description+
+#define REPORT_SORT_GCODE  end+/,start+/,desort-/,gcode+/,gpri+/,priority+/,ppri+/,due+/,scheduled-/,project+/,description+,
 #define REPORT_SORT_DONE   end+/,
 //#define REPORT_SORT_DONE   end+/,start+/,desort-/,priority+/,ppri+/,gcode+/,gpri+/,due+/,scheduled+/,project+/,description+
 
 
 // -------------------------------------------------------------
-// - Filter -
+// - Filteryer onjk -
 // -------------------------------------------------------------
 
 #define REPORT_FILTER_COMPLETED_IN_A_WEEK (status:completed and end.after:now-1wk)
@@ -36,8 +38,11 @@
 
 // in vim, :set nowrap to view lines horizontally
 
-#define REPORT_CURMIN_LABELS UUID,       Compl, dTs,       PPri, GPri, Sch,                Due, Rem,    Put,    GCode,  Project, Description
-#define REPORT_CURMIN_COLMNS uuid.short, end,   start.age, ppri, gpri, scheduled.relative, due, blkrem, blkputcum, gcode,  project, description.count
+#define REPORT_MAIN_LABELS UUID,       Compl, dTs,       PPri, GPri, Sch,                Due, Rem,    Put,    GCode,  Project, Description
+#define REPORT_MAIN_COLMNS uuid.short, end,   start.age, ppri, gpri, scheduled.relative, due, blkrem, blkputcum, gcode,  project, description.count
+
+#define REPORT_MODIFIED_LABELS UUID,       Compl, Modified, dTs,       PPri, GPri, Sch,                Due, Rem,    Put,    GCode,  Project, Description
+#define REPORT_MODIFIED_COLMNS uuid.short, end,   modified, start.age, ppri, gpri, scheduled.relative, due, blkrem, blkputcum, gcode,  project, description.count
 
 #define REPORT_ESTMIN_LABELS UUID,       Compl, dTs,       PPri, GPri, Sch,                Due, Rem,    Put,    GCode, Project, Description
 #define REPORT_ESTMIN_COLMNS uuid.short, end,   start.age, ppri, gpri, scheduled.relative, due, blkrem, blkputcum, gcode, project, description.count
@@ -47,41 +52,29 @@
 // - Main Reports -
 // -------------------------------------------------------------
 
-report.curmin.labels          =REPORT_CURMIN_LABELS
-report.curmin.columns         =REPORT_CURMIN_COLMNS
-report.curmin.description     =Current Tasks in minimum entry style (no logs)
-report.curmin.filter          =REPORT_FILTER_CURMIN
-report.curmin.sort            =REPORT_SORT_TMPL1
+report.all.labels           =REPORT_MAIN_LABELS
+report.all.columns          =REPORT_MAIN_COLMNS
+report.all.description      =All items, no filters applied
+report.all.filter           =
+report.all.sort             =status-/,REPORT_SORT_MAIN
 
-report.invmin.labels          =REPORT_CURMIN_LABELS
-report.invmin.columns         =REPORT_CURMIN_COLMNS
-report.invmin.description     =Displays Tasks (including ones marked -inv) in minimum entry style
-report.invmin.filter          =REPORT_FILTER_STARTED or (REPORT_FILTER_PENDING and +inv)
-report.invmin.sort            =REPORT_SORT_TMPL1
+report.main.labels          =REPORT_MAIN_LABELS
+report.main.columns         =REPORT_MAIN_COLMNS
+report.main.description     =Main report view. Does not show objectives.
+report.main.filter          =-obj and (REPORT_FILTER_STARTED or REPORT_FILTER_PENDING)
+report.main.sort            =status-/,REPORT_SORT_MAIN
 
-report.armin.labels           =REPORT_CURMIN_LABELS
-report.armin.columns          =REPORT_CURMIN_COLMNS
-report.armin.description      =Displays Tasks (including ones marked +ar) in minimum entry style
-report.armin.filter           =REPORT_FILTER_STARTED or (REPORT_FILTER_PENDING and +ar)
-report.armin.sort             =REPORT_SORT_TMPL1
+report.obj.labels           =REPORT_MAIN_LABELS
+report.obj.columns          =REPORT_MAIN_COLMNS
+report.obj.description      =Tasks and their objectives
+report.obj.filter           =REPORT_FILTER_STARTED or REPORT_FILTER_PENDING
+report.obj.sort             =status-/,REPORT_SORT_OBJ
 
-report.objmin.labels           =REPORT_CURMIN_LABELS
-report.objmin.columns          =REPORT_CURMIN_COLMNS
-report.objmin.description      =Displays Current objectives
-report.objmin.filter           =REPORT_FILTER_STARTED or (REPORT_FILTER_PENDING and +inv +obj)
-report.objmin.sort             =REPORT_SORT_TMPL1
-
-report.allmin.labels          =REPORT_CURMIN_LABELS
-report.allmin.columns         =REPORT_CURMIN_COLMNS
-report.allmin.description     =All Tasks (no filters) in minimum entry style
-report.allmin.filter          =
-report.allmin.sort            =status-/,REPORT_SORT_TMPL1
-
-report.main.labels          =REPORT_CURMIN_LABELS
-report.main.columns         =REPORT_CURMIN_COLMNS
-report.main.description     =All Tasks (no filters except not completed) in minimum entry style
-report.main.filter          =REPORT_FILTER_STARTED or REPORT_FILTER_PENDING
-report.main.sort            =status-/,REPORT_SORT_TMPL1
+report.modif.labels         =REPORT_MODIFIED_LABELS
+report.modif.columns        =REPORT_MODIFIED_COLMNS
+report.modif.description    =All Tasks (no filters except not completed) in minimum entry style
+report.modif.filter         =REPORT_FILTER_STARTED or REPORT_FILTER_PENDING
+report.modif.sort           =status-/,REPORT_SORT_MODIF
 
 // -------------------------------------------------------------
 // - Alternative Analysis -
@@ -91,20 +84,20 @@ report.main.sort            =status-/,REPORT_SORT_TMPL1
 // - Alternative Sortings -
 // -------------------------------------------------------------
 
-report.nosort.labels           =REPORT_CURMIN_LABELS
-report.nosort.columns          =REPORT_CURMIN_COLMNS
+report.nosort.labels           =REPORT_MAIN_LABELS
+report.nosort.columns          =REPORT_MAIN_COLMNS
 report.nosort.description      =All Tasks (no filters except not completed) in minimum entry style
 report.nosort.filter           =REPORT_FILTER_STARTED or REPORT_FILTER_PENDING
 report.nosort.sort             =
 
-report.sortdue.labels          =REPORT_CURMIN_LABELS
-report.sortdue.columns         =REPORT_CURMIN_COLMNS
+report.sortdue.labels          =REPORT_MAIN_LABELS
+report.sortdue.columns         =REPORT_MAIN_COLMNS
 report.sortdue.description     =Curretn tasks, sorted by due date
 report.sortdue.filter          =REPORT_FILTER_CURMIN_WITH(due.not:)
 report.sortdue.sort            =REPORT_SORT_DUE_H
 
-report.sortsch.labels          =REPORT_CURMIN_LABELS
-report.sortsch.columns         =REPORT_CURMIN_COLMNS
+report.sortsch.labels          =REPORT_MAIN_LABELS
+report.sortsch.columns         =REPORT_MAIN_COLMNS
 report.sortsch.description     =Curretn tasks, sorted by schedule
 report.sortsch.filter          =REPORT_FILTER_CURMIN_WITH(sch.not:)
 report.sortsch.sort            =REPORT_SORT_SCH_L
@@ -115,71 +108,63 @@ report.sortest.description     =Current Tasks displaying their estimated time to
 report.sortest.filter          =REPORT_FILTER_CURMIN_WITH(blkest.not:)
 report.sortest.sort            =REPORT_SORT_EST_H
 
-report.sortpri.labels          =REPORT_CURMIN_LABELS
-report.sortpri.columns         =REPORT_CURMIN_COLMNS
+report.sortpri.labels          =REPORT_MAIN_LABELS
+report.sortpri.columns         =REPORT_MAIN_COLMNS
 report.sortpri.description     =Sort report by ppri
 report.sortpri.filter          =REPORT_FILTER_CURMIN_WITH(ppri.not:)
 report.sortpri.sort            =REPORT_SORT_PRI_H
 
-report.sortg.labels            =REPORT_CURMIN_LABELS
-report.sortg.columns           =REPORT_CURMIN_COLMNS
+report.sortg.labels            =REPORT_MAIN_LABELS
+report.sortg.columns           =REPORT_MAIN_COLMNS
 report.sortg.description       =Curretn tasks, sorted by gcode
 report.sortg.filter            =REPORT_FILTER_CURMIN_WITH(gcode.not:)
 report.sortg.sort              =REPORT_SORT_GCODE
-
-
 
 
 // -------------------------------------------------------------
 // - Complete Reports -
 // -------------------------------------------------------------
 
-report.wkdone.labels          =REPORT_CURMIN_LABELS
-report.wkdone.columns         =REPORT_CURMIN_COLMNS
+report.wkdone.labels          =REPORT_MAIN_LABELS
+report.wkdone.columns         =REPORT_MAIN_COLMNS
 report.wkdone.description     =Completed Tasks within last week
 report.wkdone.filter          =REPORT_FILTER_STARTED or (status:completed and end.after:now-1wk)
 report.wkdone.sort            =REPORT_SORT_DONE
 
-report.2wkdone.labels         =REPORT_CURMIN_LABELS
-report.2wkdone.columns        =REPORT_CURMIN_COLMNS
+report.2wkdone.labels         =REPORT_MAIN_LABELS
+report.2wkdone.columns        =REPORT_MAIN_COLMNS
 report.2wkdone.description    =Completed Tasks within last 2 weeks
 report.2wkdone.filter         =REPORT_FILTER_STARTED or (status:completed and end.after:now-2wk)
 report.2wkdone.sort           =REPORT_SORT_DONE
 
-report.modone.labels          =REPORT_CURMIN_LABELS
-report.modone.columns         =REPORT_CURMIN_COLMNS
+report.modone.labels          =REPORT_MAIN_LABELS
+report.modone.columns         =REPORT_MAIN_COLMNS
 report.modone.description     =Completed Tasks within last month
 report.modone.filter          =REPORT_FILTER_STARTED or (status:completed and end.after:now-1mo)
 report.modone.sort            =REPORT_SORT_DONE
 
-report.3modone.labels         =REPORT_CURMIN_LABELS
-report.3modone.columns        =REPORT_CURMIN_COLMNS
+report.3modone.labels         =REPORT_MAIN_LABELS
+report.3modone.columns        =REPORT_MAIN_COLMNS
 report.3modone.description    =Completed Tasks within last month
 report.3modone.filter         =REPORT_FILTER_STARTED or (status:completed and end.after:now-3mo)
 report.3modone.sort           =REPORT_SORT_DONE
 
-report.alldone.labels         =REPORT_CURMIN_LABELS
-report.alldone.columns        =REPORT_CURMIN_COLMNS
-report.alldone.description    =Completed Tasks in minimum entry style (no logs)
-report.alldone.filter         =REPORT_FILTER_STARTED or (status:completed)
-report.alldone.sort           =REPORT_SORT_DONE
+report.alldone.labels            =REPORT_MAIN_LABELS
+report.alldone.columns           =REPORT_MAIN_COLMNS
+report.alldone.description       =Completed Tasks in minimum entry style (no logs)
+report.alldone.filter            =REPORT_FILTER_STARTED or (status:completed)
+report.alldone.sort              =REPORT_SORT_DONE
 
 // -------------------------------------------------------------
 // - Other Reports -
 // -------------------------------------------------------------
 
-report.delmin.labels          =REPORT_CURMIN_LABELS
-report.delmin.columns         =REPORT_CURMIN_COLMNS
+report.delmin.labels          =REPORT_MAIN_LABELS
+report.delmin.columns         =REPORT_MAIN_COLMNS
 report.delmin.description     =Deleted Tasks
 report.delmin.filter          =status:deleted
-report.delmin.sort            =REPORT_SORT_TMPL1
+report.delmin.sort            =REPORT_SORT_MAIN
 
 // -------------------------------------------------------------
 // - Inactive Reports -
 // -------------------------------------------------------------
-
-report.tagmin.labels          =UUID,       Compl,     dTs,       Mod,          Sch,                Tags,      Project, Description
-report.tagmin.columns         =uuid.short, end,       start.age, modified.age, scheduled.relative, tags.list, project, description.count
-report.tagmin.description     =Minimal details of tasks (With Duration)
-report.tagmin.filter          =status:pending or status:waiting or status:completed
-report.tagmin.sort            =end-/,modified-/,tags-/,project+/,description+

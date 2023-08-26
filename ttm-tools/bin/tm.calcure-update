@@ -21,7 +21,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}"  )" &> /dev/null && pwd )
 EVENTS_CSV="$HOME/.task/schedule/events.csv"
 
 # reorder events
-python3 "$SCRIPT_DIR/tm.calcure-update.py" "$EVENTS_CSV" 'reorder-events'
+python3 "$SCRIPT_DIR/tmlib.calcure-update.py" "$EVENTS_CSV" 'reorder-events'
 script_status=$?
 echo status: $script_status
 

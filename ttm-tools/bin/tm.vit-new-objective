@@ -6,7 +6,7 @@
 
 
 # Create new subtask
-new_uuid=$(source tm.vit-new-subtask)
+new_uuid=$(source tmlib.vit-new-subtask)
 new_uuid=$(echo $new_uuid | rev | cut -d' ' -f1 | rev)
 
 # $1 - target tmux pane. Ex: somesession:1.1
