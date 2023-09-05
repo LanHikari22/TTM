@@ -13,4 +13,4 @@ source lib-tm-common
 
 uuid=$(extract_uuid_from_main_vit_window $a_cur_pane) || assert_ok "$uuid"
 parent_uuid=$(task _get $uuid.childof | rev | cut -d ',' -f2 | rev | tr -d ' ')
-echo "task context obj && vit main $parent_uuid or childof.endswith:$parent_uuid, && task context cur" | tr --d '\n' | tmux loadb -
+echo "task context obj && vit main $parent_uuid or childof.endswith:$parent_uuid, && task context proj" | tr --d '\n' | tmux loadb -

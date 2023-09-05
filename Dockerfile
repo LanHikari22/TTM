@@ -96,7 +96,7 @@ RUN echo "export LANG=en_IN.UTF-8" >> /root/.zshrc
 
 # Install Time and task management packages
 RUN mkdir /root/src
-RUN python3 -m pip install vit tzdata
+RUN python3 -m pip install vit tzdata pandas pipe
 COPY ttm-tools /root/src/ttm-tools
 RUN cd /root/src/ttm-tools && ./release.sh --all -v
 #RUN cd /root/.task/taskrc/src && ./replace_system_taskrc.sh && yes | ./context.sh

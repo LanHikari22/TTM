@@ -147,10 +147,31 @@ function! GetWeekRelativeCustomDateString()
 endfunction
 
 function! GetLeadingSpaces()
-    " Match the leading spaces of the current line
-    let l:spaces = matchstr(getline('.'), '^\s\+')
+    " Get the current line number
+    let l:current_line = line('.')
 
-    return l:spaces
+    " Loop backward from the current line
+    while l:current_line > 0
+        " Get the content of the current line
+        let l:line_content = getline(l:current_line)
+
+        " Check if the line starts with the date pattern
+        if l:line_content =~ '^\s*- \d\{6\}-W\d\{2\}[MTWRFSU]'
+            " Match the leading spaces of the line and return
+            return matchstr(l:line_content, '^\s\+')
+        endif
+
+        " if the line starts with a non-space character, there won't be any spaces
+        if l:line_content =~ '^\S'
+            return ''
+        endif
+
+        " Decrement the line number to check the previous line
+        let l:current_line -= 1
+    endwhile
+
+    " If no matching line is found, return empty string
+    return ''
 endfunction
 
 function! CreateNoteTemplate()
@@ -168,8 +189,10 @@ function! CreateNoteTemplate()
 
     let spaces= GetLeadingSpaces()
 
+    let divider="------------------------------------------------------------------------"
+
     " Create the todo log
-    let todo_log = spaces . identifier . "- TODO (tags: #)\n" . spaces . "\tLOG_START\n" . spaces . "\t- " . trim(date_string) . " " . trim(time_string) . " - Created Note Entry\n" . spaces . "\tLOG_END"
+    let todo_log = spaces . identifier . "- TODO (tags: #)\n" . spaces . "\tLOG_START\n" . spaces . "\t- " . trim(date_string) . " " . trim(time_string) . " - Created Note Entry\n" . spaces . "\tLOG_END\n" . spaces . divider
 
     " Add the todo log to the current buffer
     call append(line('.'), split(todo_log, '\n'))

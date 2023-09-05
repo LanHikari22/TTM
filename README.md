@@ -1,20 +1,16 @@
 <div align="center">
-  <a href="https://github.com/jeffreytse/zsh-vi-mode"> TODO
-    <img alt="vi-mode →~ zsh" src="https://user-images.githubusercontent.com/9413601/103399068-46bfcb80-4b7a-11eb-8741-86cff3d85a69.png" width="600"> TODO
-  </a>
-  <p> 💻 A time and task management system for the terminal enthusiast! </p>
-
-  <br> <h1>⚒️ TTM ⚒️</h1>
-
+  <pre>
+  ████████╗████████╗███╗░░░███╗
+  ╚══██╔══╝╚══██╔══╝████╗░████║
+  ░░░██║░░░░░░██║░░░██╔████╔██║
+  ░░░██║░░░░░░██║░░░██║╚██╔╝██║
+  ░░░██║░░░░░░██║░░░██║░╚═╝░██║
+  ░░░╚═╝░░░░░░╚═╝░░░╚═╝░░░░░╚═╝
+  </pre>
+  <p>An integrated environment for time and task management over docker</p>
 </div>
 
-
-
-<h4 align="center">
-  <a href="https://www.zsh.org/" target="_blank"><code>ZSH</code></a> plugin for Agnosticism.
-</h4>
-
-<p align="center">
+<!-- <p align="center">
 
   <a href="https://github.com/sponsors/jeffreytse">
     <img src="https://img.shields.io/static/v1?label=sponsor&message=%E2%9D%A4&logo=GitHub&link=&color=greygreen"
@@ -46,37 +42,57 @@
       alt="Donate (Ko-fi)" />
   </a>
 
-</p>
+</p> -->
 
 <div align="center">
   <h4>
+    <a href="#-whyttm">Why TTM?</a> |
     <a href="#-features">Features</a> |
     <a href="#%EF%B8%8F-installation">Install</a> |
     <a href="#-usage">Usage</a> |
+    <a href="#-future">Future</a> |
     <a href="#-credits">Credits</a> |
     <a href="#-license">License</a>
   </h4>
 </div>
 
 <div align="center">
-  <sub>Built with ❤︎ by TODO
-  <a href="https://jeffreytse.net">jeffreytse</a> and
-  <a href="https://github.com/jeffreytse/zsh-vi-mode/graphs/contributors">contributors </a>
+  <sub>Built with ❤︎ by Mohammed Alzakariya
+  <!-- <a href="https://jeffreytse.net">jeffreytse</a> and
+  <a href="https://github.com/jeffreytse/zsh-vi-mode/graphs/contributors">contributors </a> -->
 </div>
 <br>
 
-<img alt="TTM Demo" src="https://user-images.githubusercontent.com/9413601/105746868-f3734a00-5f7a-11eb-8db5-22fcf50a171b.gif" /> TODO
+<!-- <img alt="TTM Demo" src="https://user-images.githubusercontent.com/9413602/105746868-f3734a00-5f7a-11eb-8db5-22fcf50a171b.gif" /> TODO -->
 
 ## 🤔 Why TTM?
 
-TODO
+Linux offers many powerful tools for time and task management and note taking. This includes 
+taskwarrior and TUI front ends for it such as vit. It includes tmux and vim which can be extended
+for quick context switching, searching and recording of data to keep our attention focused. 
+
+Unfortunately, setting up the right environment takes a lot of work and is not easily reproducible
+across systems. TTM Offers a fully integrated solution working out of the box with Docker. It
+includes customizations to tmux, vim, and taskwarrior to enhance user experience and navigation.
+
+Taskwarrior by default needs a lot of configurations which can also be redundant. TTM configures
+all of this off the bat and offers a subtasks feature and integration between taskwarrior and a
+calendar react app running out of the box. It also offers note taking capabilities with vim that
+can easily track refernce with tasks and the calendar.
+
+So in simple words, use TTM to effectively manage your time over the terminal while leveraging
+web services to give intuitive analytics and reports. This can be run over a server and accessed
+from anywhere. 
 
 
 ## ✨ Features
 
 - Built as a docker container for reproducible builds and very easy installation.
 - Docker image mounts on time and task data outside the container which can be git version controlled
+
 - Integration of various time and task management linux tools as well as vim and tmux for context switching.
+  <img src="https://cdn.discordapp.com/attachments/1148294149284573235/1148419701970575440/230904-W36M-gif2.gif" />
+
 - Builds on Vit, a user interface for Taskwarrior, a terminal task management database
   - Allows for Subtasks and note integration for each task. 
   - Integrates Taskwarrior with Calendar events with Calcure and a React google calendar like webapp
@@ -86,24 +102,20 @@ TODO
   - Comes with a preprocessor script for easier and generalizable TaskWarrior configuration
 - Enables custom vim and tmux configuration for quick navigation, search, and note taking
 - Enables custom zsh plugin configuration for quick access to history and sytax highlighting and vim-mode terminal editing
+
 - Comes with Vim macros for color and syntax highlighting of calcure event csv file which updates the react calendar app very quickly
+
+- A csv file controls the placement of events in the graphical web interface. It also has vim color syntax that can be
+  toggled with a macro to a given day to distinguish planned (yellow), completed (cyan), and pending events (white/blue).
+  <img src="https://cdn.discordapp.com/attachments/1148294149284573235/1148405695943802900/image.png" />
+  <img src="https://cdn.discordapp.com/attachments/1148294149284573235/1148405977712951366/image.png" />
+
 - Comes with Vim commands for creating note entries and note logs with standardized date codes
+<img src="https://cdn.discordapp.com/attachments/1148294149284573235/1148403850999513108/image.png" />
 
-
-- 🌟 Pure Zsh's script without any third-party dependencies.
-- 🎉 Better experience with the near-native vi(vim) mode.
-- ⌛ Lower delay and better response (Mode switching speed, etc.).
-- ✏️  Mode indication with different cursor styles.
-- 🧮 Cursor movement (Navigation).
-- 📝 Insert & Replace (Insert mode).
-- 💡 Text Objects (A word, inner word, etc.).
-- 🔎 Searching history.
-- ❇️  Undo, Redo, Cut, Copy, Paste, and Delete.
-- 🪐 Better surrounds functionality (Add, Replace, Delete, Move Around, and Highlight).
-- 🧽 Switch keywords (Increase/Decrease Number, Boolean, Weekday, Month, etc.).
-- ⚙️  Better functionality in command mode (**In progress**).
-- 🪀 Repeating command such as `10p` and `4fa` (**In progress**).
-- 📒 System clipboard (**In progress**).
+- Ability to timeblock floating events that shift with time according to rules
+- Treemap and heatmap Visualizations that link the concrete events completed to their tracked task and project structure
+<img src="https://cdn.discordapp.com/attachments/1148294149284573235/1148408886756393000/230904-W36M-gif1.gif" />
 
 ## 💼 Requirements TODO
 
@@ -111,29 +123,26 @@ Docker
 
 ## 🛠️ Installation TODO
 
-TODO
-
-## Packaging Status
-
-[![Packaging status](https://repology.org/badge/vertical-allrepos/zsh-vi-mode.svg)](https://repology.org/project/zsh-vi-mode/versions)
+Simply install the docker image and run it.
 
 ## 📚 Usage
 
 TODO
 
+## 🌱 Future
+- Implement syncronization with popular calendar and TODO list apps.
+- Implement a rule-based reminder system for events.
+- Implement more analytics and seamless event refitting for liquid timeboxing.
+
 ## 🎉 Credits
 
-- [Zsh](https://www.zsh.org/) - A powerful shell that operates as both an interactive shell and as a scripting language interpreter.
-- [Oh-My-Zsh](https://github.com/ohmyzsh/ohmyzsh) - A delightful, open source, community-driven framework for managing your ZSH configuration.
-- [vim-surround](https://github.com/tpope/vim-surround) - A vim plugin that all about "surroundings": parentheses, brackets, quotes, XML tags, and more.
-- [vim-sandwich](https://github.com/machakann/vim-sandwich) - A set of operator and textobject plugins to add/delete/replace surroundings of a sandwiched textobject.
+- https://github.com/jeffreytse for the README visual style.
 
 ## 🔫 Contributing
 
-Issues and Pull Requests are greatly appreciated. If you've never contributed to an open source project before I'm more than happy to walk you through how to create a pull request.
-
-You can start by [opening an issue](https://github.com/jeffreytse/zsh-vi-mode/issues/new) describing the problem that you're looking to resolve and we'll go from there.
+Contributions and ideas are always welcome! Feel free to raise a ticket. This is currently early
+release and there a lot of features to be added.
 
 ## 🌈 License
 
-This theme is licensed under the [MIT license](https://opensource.org/licenses/mit-license.php) © Jeffrey Tse.
+This theme is licensed under the [MIT license](https://opensource.org/licenses/mit-license.php) © Mohammed Alzakariya.
