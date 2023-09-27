@@ -1,10 +1,10 @@
 #!/bin/sh
 
 # TODO Update: This is the location on mounted for storing notes
-export TTM_NOTES_MOUNT=~/data/ttm/notes
+export TTM_NOTES_MOUNT=~/winhome/notes
 
 # TODO Update: This is the location on mounted for storing task database and schedule information
-export TTM_TASK_MOUNT=~/data/ttm/task
+export TTM_TASK_MOUNT=~/winhome/task
 
 # The port for a React calendar app representation of the schedule
 export TTM_CALENDAR_PORT=3000
