@@ -24,4 +24,4 @@ tmux bind-key 'C-m' command-prompt -p "tm.fzf-cmd notes:6.1" "ru -b 'tm.fzf-cmd 
 tmux bind-key 'C-l' run-shell 'tmux split-window; tmux kill-pane -t 1'
 tmux bind-key 'C-v' run-shell 'tmux select-layout even-vertical'
 
-tmux attach -t main
+#tmux attach -t main
