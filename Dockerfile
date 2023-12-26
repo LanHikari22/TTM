@@ -77,6 +77,8 @@ COPY scripts/vimrc_plugins /root/.vimrc
 RUN vim +PlugInstall +qall
 COPY scripts/vimrc /root/.vimrc
 COPY scripts/macrobatics /root/.config/macrobatics
+RUN mkdir -p /root/.vim/scripts
+COPY scripts/ttm.vim /root/.vim/scripts/ttm.vim
 
 # Install tpm for tmux
 RUN git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm

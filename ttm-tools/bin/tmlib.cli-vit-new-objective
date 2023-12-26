@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# in vit and tmux, press e to open task editor 
+# and run "prefix :ru tm.vit-open-notes {this_pane} {target-pane}"
+# the UUID is figured out from the vit window
+
+uuid=$1
+
+# Create new subtask
+new_uuid=$(source tmlib.cli-vit-new-subtask $uuid)
+new_uuid=$(echo $new_uuid | rev | cut -d' ' -f1 | rev)
+
+log_module='tm.cli-vit-new-objective'
+log_info_active=1
+log_debug_active=1
+log_trace_active=0
+source lib-tm-common
+
+# Do not need to add -obj distinction. Objectives are more effective than subtasks and do not need to be distinguished from it.
+#project=$(echo $(task _get $uuid.project)-obj)
+#task $new_uuid modify "project:$project"
+
+tags=$(task _get $uuid.tags)
+task modify $new_uuid +inv +obj
+task modify $new_uuid gpri: ppri: blkput: blkputcum: sch: due:
+
+echo Created new objective $new_uuid for $uuid

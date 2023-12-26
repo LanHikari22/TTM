@@ -12,6 +12,7 @@ endif
 " - A space, followed by five characters representing the time (HH:MM)
 " - Another space and dash
 syntax match CustomDate "- \d\{6}-W\d\{2}[MTWRFSU] \d\{2}:\d\{2}"
+syntax match ObjectiveToken "- \d\{6}-W\d\{2}[MTWRFSU] \d\{2}:\d\{2} - (.*) .*"
 syntax match Header "^ *#.*$"
 syntax match NoteToken "..\d\{6}-W\d\{2}[MTWRFSU]-\d\{4}."
 syntax match LOG_START "LOG_START"
@@ -21,6 +22,7 @@ syntax match LOG_END "LOG_END"
 highlight link CustomDate Comment
 highlight Header guifg=White ctermfg=White
 highlight NoteToken guifg=Blue ctermfg=Blue
+highlight ObjectiveToken guifg=Yellow ctermfg=Yellow
 highlight LOG_START guifg=Red ctermfg=Red
 highlight LOG_END guifg=Red ctermfg=Red
 

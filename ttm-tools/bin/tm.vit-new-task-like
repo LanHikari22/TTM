@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# $1 - target pane -- unused. Ex: notes:1.2
+a_target_pane=$1
+a_cur_pane=$TMUX_PANE
+
+log_module='tm.vit-new-task-like'
+log_debug_active=1
+source lib-tm-common
+
+uuid=$(extract_uuid_from_main_vit_window $a_cur_pane) || assert_ok "$uuid"
+
+gcode="$(task _get $uuid.gcode)"
+project="$(task _get $uuid.project)"
+
+context="$(task 2>&1 | perl -wne '/Context .(.*). set.*/i and print $1' 2>/dev/null)"
+if [ -z $context ]; then
+  context="none"
+fi
+
+# Have to remove context as it adds its own tags
+task context none
+task add +tT gc:$gcode proj:$project TODO
+task context $context

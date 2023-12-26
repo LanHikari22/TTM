@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# in vit and tmux, press e to open task editor and run "prefix :ru tm.vit-open-notes {this_pane} {target-pane}"
-# the uuid is figured out from the vit window
-
 # $1 - target pane -- unused. Ex: notes:1.2
 a_target_pane=$1
 a_cur_pane=$TMUX_PANE
@@ -11,5 +8,10 @@ log_module='tm.copy-uuid'
 log_debug_active=1
 source lib-tm-common
 
+context="$(task 2>&1 | perl -wne '/Context .(.*). set.*/i and print $1' 2>/dev/null)"
+if [ -z $context ]; then
+  context="none"
+fi
+
 uuid=$(extract_uuid_from_main_vit_window $a_cur_pane) || assert_ok "$uuid"
-echo "task context obj && vit obj $uuid or childof.endswith:$uuid, && task context proj" | tr --d '\n' | tmux loadb -
+echo "task context obj && vit obj $uuid or childof.endswith:$uuid, && task context $context" | tr --d '\n' | tmux loadb -
