@@ -552,8 +552,8 @@ def build_objective_line_item(item: Item) -> str:
     # Optional: Ref Count
     ref_count = item.get_part(ItemType.REF_COUNT)
     if ref_count:
-        n = ref_count.get_part(ItemType.KV, key='n')['n']
-        result += ' [Refs] {n}'
+        n = ref_count.get_part(ItemType.KV, key='n').value['n']
+        result += f' [Refs {n}]'
 
     # Optional: Tags
     tags = item.get_part(ItemType.TAGS)

@@ -49,6 +49,22 @@ def sync_task(filename, lineno) -> str:
         status = status.value['status']
     tags = cur_item.get_part(ntp.ItemType.TAGS)
 
+    # Status if not specifiable explicitly can also be inferred from tags. 
+    for tag_part in tags.parts:
+        tag = list(tag_part.value.values())[0]
+        if tag == 'pending':
+            status = '-'
+            break
+        if tag == 'completed':
+            status = '!'
+            break
+        if tag == 'deleted':
+            status = 'X'
+            break
+        if tag == 'archived':
+            status = 'A'
+            break
+        
     # Get the gcode and project from the notes filename
     basename = os.path.basename(filename)
     basename_split = basename.split('-')
@@ -103,10 +119,10 @@ def sync_task(filename, lineno) -> str:
     if status == 'X' and tw_status != 'deleted':
         prn_info(f'Syncing status: {tw_status }-> deleted')
         ntp.system_cmd(f'task modify {cur_item_uuid} status:deleted')
-    if status == 'A' and ('inv' not in tw_tags or 'ar' not in tw_tags):
+    if status == 'A' and 'ar' not in tw_tags:
         prn_info(f'Syncing status: archived')
         ntp.system_cmd(f'task modify {cur_item_uuid} +ar')
-    if status != 'A' and ('inv' in tw_tags or 'ar' in tw_tags):
+    if status != 'A' and 'ar' in tw_tags:
         prn_info(f'Syncing status: unarchived')
         ntp.system_cmd(f'task modify {cur_item_uuid} -ar')
 
@@ -118,15 +134,16 @@ def sync_task(filename, lineno) -> str:
 
     # Sync Project and gcode
     if gcode != tw_gcode:
-        prn_info('Syncing gcode')
+        prn_info(f'Syncing gcode: {tw_gcode} -> {gcode}')
         ntp.system_cmd(f'task modify {cur_item_uuid} gcode:{gcode}')
     if proj != tw_proj:
-        prn_info('Syncing proj')
+        prn_info(f'Syncing proj: {tw_proj} -> {proj}')
         ntp.system_cmd(f'task modify {cur_item_uuid} project:{proj}')
 
     # If gcode is in the note tags, add +inv +gcode. This is for a task that represents 
     # the entire project and should have its own context.
     if has_gcode and ('inv' not in tw_tags or 'gcode' not in tw_tags):
+        prn_info(f'Syncing gcode task')
         ntp.system_cmd(f'task modify {cur_item_uuid} +inv +gcode -area -res')
     if not has_gcode and ('gcode' in tw_tags):
         ntp.system_cmd(f'task modify {cur_item_uuid} -gcode')

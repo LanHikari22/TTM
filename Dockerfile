@@ -16,9 +16,12 @@ RUN apt-get update && apt-get install -y \
   ruby-full \
   taskwarrior \
   python3 \
-  python3-pip
+  python3-pip \
+  locales \
+  ncurses-term
 
 #RUN apt-get update && apt-get install -y iputils-ping
+
 
 # Set up SSH
 RUN mkdir /var/run/sshd
@@ -59,13 +62,14 @@ RUN echo "git config --global --add safe.directory /root/.task" >> /root/.zshrc
 ENV TZ=America/Chicago
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+
 # Now you can safely install tzdata
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
 
 # Setup place for bins in $PATH
 RUN mkdir -p /root/.local/bin
 RUN echo 'PATH=/root/.local/bin:$PATH' >> /root/.zshrc
-RUN echo 'export TERM=xterm-256color' >> /root/.zshrc
+#RUN echo 'export TERM=xterm-256color' >> /root/.zshrc
 COPY scripts/shellrc /root/.shellrc
 RUN echo 'source ~/.shellrc' >> /root/.zshrc
 RUN mkdir -p /root/.config/shell
@@ -93,6 +97,7 @@ RUN tmux start-server \
     && sleep 1 \
       && /root/.tmux/plugins/tpm/scripts/install_plugins.sh \
         && tmux kill-server
+RUN locale-gen en_US.UTF-8
 RUN echo "export LC_ALL=en_IN.UTF-8" >> /root/.zshrc
 RUN echo "export LANG=en_IN.UTF-8" >> /root/.zshrc
 

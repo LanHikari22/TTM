@@ -62,9 +62,105 @@ let g:NERDSpaceDelims = 1
 "" Plug 'junegunn/fzf.vim'
 nmap !f :Files<cr>
 nmap !g :Rg<cr>
+command! -bang -nargs=* Rgg call fzf#vim#grep("rg -w --column --line-number --no-heading --color=always --smart-case -- ".fzf#shellescape(<q-args>), fzf#vim#with_preview(), <bang>0)
+nmap @g :call PreservedHyphenWordYankExec("Rgg ")<cr>
 nmap !t :Tags<cr>
+nmap !l :call SaveToJumplistIfOK("BLines")<cr>
+nmap !L :call SaveToJumplistIfOK("BLinesNoSort")<cr>
+nmap #l :call PreservedHyphenWordYankExec("BLines '")<cr>
+nmap #L :call PreservedHyphenWordYankExec("BLinesNoSort '")<cr>
+nmap !e :call SaveToJumplistIfOK("BLinesEntriesCurrFile")<cr>
+nmap !E :call SaveToJumplistIfOK("BLinesEntriesAllFiles")<cr>
 
-call plug#end()
+let g:fzf_preview_window = ['up:60%', 'ctrl-/']
+
+command! -bang -nargs=* BLines
+    \ call fzf#vim#grep(
+    \   'rg --with-filename --column --line-number --no-heading --smart-case . '.fnameescape(expand('%:p')), 1,
+    \ )
+
+    "\ call fzf#vim#grep(
+    "\   'rg --with-filename --column --line-number --no-heading --smart-case . '.fnameescape(expand('%:p')), 1,
+    "\   fzf#vim#with_preview({'options': '--layout reverse --query '.shellescape(<q-args>).' --with-nth=4.. --delimiter=":"'}, 'down:60%'))
+
+
+" \   fzf#vim#with_preview({'options': '--layout reverse  --with-nth=-1.. --delimiter="/"'}, 'right:50%'))
+
+command! -bang -nargs=* BLinesNoSort
+    \ call fzf#vim#grep(
+    \   'rg --with-filename --column --line-number --no-heading --smart-case . '.fnameescape(expand('%:p')), 1,
+    \ )
+
+    "\ call fzf#vim#grep(
+    "\   'rg --with-filename --column --line-number --no-heading --smart-case . '.fnameescape(expand('%:p')), 1,
+    "\   fzf#vim#with_preview({'options': '--layout reverse --query '.shellescape(<q-args>).' --no-sort --with-nth=4.. --delimiter=":"'}, 'down:60%'))
+
+command! -bang -nargs=* BLinesEntriesCurrFile
+    \ call fzf#vim#grep(
+    \   "rg --with-filename --column --line-number --no-heading -e \"(-\ \\(|tags:)\" --smart-case ".fnameescape(expand('%:p')), 1,
+    \ )
+
+command! -bang -nargs=* BLinesEntriesAllFiles
+    \ call fzf#vim#grep(
+    \   "rg --with-filename --column --line-number --no-heading -e \"(-\ \\(|tags:)\" --smart-case . ".fnameescape(expand('%:p')), 1,
+    \ )
+
+function PreservedHyphenWordYankExec(command)
+  " calls a:command with yiw at this cursor that includes
+  " hyphens. The yank is preserved and does not affect
+  " the user's registers
+
+  " save this location to the jumplist first. see :jumps
+  normal! m`
+
+  let save_cb = &cb
+  let l:register = '"'
+  " let reginfo = getreginfo(l:register)
+  try
+    call YankWordWithHyphen()
+    let l:cmd = ":" . a:command . getreg('"')
+    exec l:cmd
+    " call setreg(l:register, reginfo)
+    call ConsumeSaveToJumplistOnError()
+  endtry
+endfunction
+
+function YankWordWithHyphen()
+    " include hyphens as word symbol temporarily
+    let l:includes_hyphen=stridx(&iskeyword, ',-')
+    if l:includes_hyphen == -1
+      set iskeyword+=-
+    endif
+
+    norm! yiw
+
+    " restore iskeyword
+    if l:includes_hyphen == -1
+      set iskeyword-=-
+    endif
+endfunction
+
+function SaveToJumplistIfOK(command)
+  " save this location to the jumplist first. see :jumps
+  normal! m`
+
+  try
+    let l:cmd = ":" . a:command
+    exec l:cmd
+  endtry
+
+  call ConsumeSaveToJumplistOnError()
+endfunction
+
+function ConsumeSaveToJumplistOnError()
+  if v:shell_error != 0
+    " we canceled the command or something went wrong, undo addition to
+    " jumplist. This still would cause the jump history past current point to
+    " be deleted
+    normal! ␏
+    endif
+endfunction
+
 
 " Plug 'svermeulen/vim-macrobatics'
 
@@ -91,6 +187,7 @@ nmap <leader>md <plug>(Mac_SearchForNamedMacroAndDelete)
 nmap <leader>me <plug>(Mac_SearchForNamedMacroAndPlay)
 nmap <leader>ms <plug>(Mac_SearchForNamedMacroAndSelect)
 
+call plug#end()
 
 " ---------------------------------------------------------------------------
 " Other configs
@@ -120,6 +217,9 @@ syntax on
 
 set clipboard=unnamedplus
 
+" Sometimes there are issues with rendering UTF8, see https://stackoverflow.com/a/22715874
+set tenc=utf8
+
 set foldmethod=indent
 set nofoldenable
 
@@ -133,5 +233,27 @@ set nowrap
 
 command! -nargs=0 Random4 :r!python3 -c "import random; print(int(random.random() * 1E4))"
 
-# for ttm and note taking
+function! OpenFoldsUpToCursor()
+    " Close all
+    silent normal! zM
+  
+  " Get the current cursor position
+  let l:cursor_pos = getpos(".")
+  let l:line_num = l:cursor_pos[1]
+
+    " Repeat opening folds so long as the current line is in a closed fold
+    while foldclosed(l:line_num) != -1
+  " | | " Use zo to open the fold at the current cursor position
+    | | silent normal! zo
+  " | | " Wait for a moment to observe the action, with the correct sleep command for 1 second
+  " | | "sleep 1000m
+  " | | " Update the cursor position in case it changes
+  " | | silent let l:cursor_pos = getpos(".")
+  " | | let l:line_num = l:cursor_pos[1]
+    endwhile
+endfunction
+
+nnoremap <silent> zu :call OpenFoldsUpToCursor()<CR>
+
+" for ttm and note taking
 source ~/.vim/scripts/ttm.vim
