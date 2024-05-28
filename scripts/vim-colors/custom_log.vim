@@ -14,6 +14,7 @@ endif
 syntax match CustomDate "- \d\{6}-W\d\{2}[MTWRFSU] \d\{2}:\d\{2}"
 syntax match ObjectiveToken "- \d\{6}-W\d\{2}[MTWRFSU] \d\{2}:\d\{2} - (.*) .*"
 syntax match Header "^ *#.*$"
+syntax match Header "^ *_.*$"
 syntax match NoteToken "..\d\{6}-W\d\{2}[MTWRFSU]-\d\{4}."
 syntax match LOG_START "LOG_START"
 syntax match LOG_END "LOG_END"

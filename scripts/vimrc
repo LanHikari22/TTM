@@ -102,7 +102,7 @@ command! -bang -nargs=* BLinesEntriesCurrFile
 
 command! -bang -nargs=* BLinesEntriesAllFiles
     \ call fzf#vim#grep(
-    \   "rg --with-filename --column --line-number --no-heading -e \"(-\ \\(|tags:)\" --smart-case . ".fnameescape(expand('%:p')), 1,
+    \   "rg --with-filename --column --line-number --no-heading -e \"(-\ \\(|tags:)\" --smart-case ", 1,
     \ )
 
 function PreservedHyphenWordYankExec(command)
@@ -160,7 +160,6 @@ function ConsumeSaveToJumplistOnError()
     normal! ␏
     endif
 endfunction
-
 
 " Plug 'svermeulen/vim-macrobatics'
 
@@ -234,26 +233,21 @@ set nowrap
 command! -nargs=0 Random4 :r!python3 -c "import random; print(int(random.random() * 1E4))"
 
 function! OpenFoldsUpToCursor()
-    " Close all
-    silent normal! zM
-  
-  " Get the current cursor position
+  silent normal! zM
+
   let l:cursor_pos = getpos(".")
   let l:line_num = l:cursor_pos[1]
 
-    " Repeat opening folds so long as the current line is in a closed fold
-    while foldclosed(l:line_num) != -1
-  " | | " Use zo to open the fold at the current cursor position
-    | | silent normal! zo
-  " | | " Wait for a moment to observe the action, with the correct sleep command for 1 second
-  " | | "sleep 1000m
-  " | | " Update the cursor position in case it changes
-  " | | silent let l:cursor_pos = getpos(".")
-  " | | let l:line_num = l:cursor_pos[1]
-    endwhile
+  while foldclosed(l:line_num) != -1
+    silent normal! zo
+    silent let l:cursor_pos = getpos(".")
+    let l:line_num = l:cursor_pos[1]
+  endwhile
 endfunction
 
 nnoremap <silent> zu :call OpenFoldsUpToCursor()<CR>
+
+nnoremap Q <Nop>
 
 " for ttm and note taking
 source ~/.vim/scripts/ttm.vim
