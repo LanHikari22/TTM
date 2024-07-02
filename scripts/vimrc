@@ -71,6 +71,7 @@ nmap #l :call PreservedHyphenWordYankExec("BLines '")<cr>
 nmap #L :call PreservedHyphenWordYankExec("BLinesNoSort '")<cr>
 nmap !e :call SaveToJumplistIfOK("BLinesEntriesCurrFile")<cr>
 nmap !E :call SaveToJumplistIfOK("BLinesEntriesAllFiles")<cr>
+nmap !r :!/root/.local/bin/tmlib.notes-task-notelog-grep.sh<cr>
 
 let g:fzf_preview_window = ['up:60%', 'ctrl-/']
 
@@ -214,7 +215,7 @@ set nu rnu
 filetype plugin on
 syntax on
 
-set clipboard=unnamedplus
+set clipboard+=unnamedplus
 
 " Sometimes there are issues with rendering UTF8, see https://stackoverflow.com/a/22715874
 set tenc=utf8

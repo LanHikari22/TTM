@@ -55,7 +55,7 @@ class Item:
         RE_OBJECTIVE_STATUS_GRP = '\(([-!XAB])\)'
         RE_NOTE_DEF_DESC_GRP = f'{RE_TAB_LEVEL}{RE_NOTE_TOKEN}-\s*(.*)\s*{RE_TAGS}'
         RE_OBJECTIVE_LINE_DESC_GRP = f'{RE_TAB_LEVEL}- {RE_TIME_DATE} - {RE_OBJECTIVE_STATUS}\s*(.*)'
-        RE_LOG_LINE_DESC_GRP = f'{RE_TAB_LEVEL}- {RE_TIME_DATE} -\s*(.*)'
+        RE_LOG_LINE_DESC_GRP = f'{RE_TAB_LEVEL}[-_] {RE_TIME_DATE} -\s*(.*)'
 
         def kv(k, v):
             return Item(ItemType.KV, {k: v}, [])
@@ -258,7 +258,17 @@ class Item:
                 if verbose:
                     prn_error('error: objective line schema is not met')
                 return None
-            desc = kv('desc', m.groups()[0])
+            _desc = m.groups()[0]
+            # desc = kv('desc', m.groups()[0])
+
+            # Include any possible multilines in Description
+            _lines = desc.split('\n')
+            if len(_lines) > 1:
+                for _line in _lines[1:]:
+                    _desc += '\n' + _line.strip()
+
+
+            desc = kv('desc', _desc)
 
             # Process tags and find UUID tag
             if tags:
@@ -409,7 +419,8 @@ class Item:
         elif len(result) == 1:
             return result[0]
         else:
-            return results
+            return result
+
     def __str__(self):
         part_str = []
         for part in self.parts:
@@ -441,6 +452,25 @@ def process_note_file(filename, incl_logs=False) -> List[Tuple[int, Item]]:
             if item:
                 parsed_lines.append((i+1, item))
                 continue
+
+            # It is possible that the current line is a multiline continuation of the last line.
+            if len(parsed_lines) > 0:
+                cur_tab_level = len(Item.parse(ItemType.TAB_LEVEL, line).value) + 1 # +1: margin, missing space between '-' and the desc.
+
+                # We want to measure the amount of characters until we begin the description. We take as referece only the first line, hence
+                # value.split('\n')[0]. This is also because otherwise, it would could a whole lot of padding spaces we filter out.
+                expected_tab_level = len(parsed_lines[-1][1].value.split('\n')[0]) \
+                                   - len(parsed_lines[-1][1].get_part(ItemType.KV, key='desc').value['desc'])
+
+                if parsed_lines[-1][1].item_type in [ItemType.LOG_LINE] and \
+                   cur_tab_level >= expected_tab_level:
+                    prev_lines = parsed_lines[-1][1].value
+                    combined_lines = prev_lines + '\n' + line
+
+                    # Let's reparse the last element.
+                    item = Item.parse(ItemType.LOG_LINE, combined_lines)
+                    if item:
+                        parsed_lines[-1] = (parsed_lines[-1][0], item)
 
     return parsed_lines
 

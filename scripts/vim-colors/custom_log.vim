@@ -19,10 +19,13 @@ syntax match NoteToken "..\d\{6}-W\d\{2}[MTWRFSU]-\d\{4}."
 syntax match LOG_START "LOG_START"
 syntax match LOG_END "LOG_END"
 
+" syntax match Citation "\[\^\w*:*\.*\w*\]"
+
 " Link the CustomDate syntax to the Comment highlight group to make it gray
 highlight link CustomDate Comment
 highlight Header guifg=White ctermfg=White
 highlight NoteToken guifg=Blue ctermfg=Blue
+" highlight Citation guifg=Blue ctermfg=Yellow
 highlight ObjectiveToken guifg=Yellow ctermfg=Yellow
 highlight LOG_START guifg=Red ctermfg=Red
 highlight LOG_END guifg=Red ctermfg=Red

@@ -18,10 +18,10 @@ RUN apt-get update && apt-get install -y \
   python3 \
   python3-pip \
   locales \
-  ncurses-term
+  ncurses-term \
+  xclip
 
 #RUN apt-get update && apt-get install -y iputils-ping
-
 
 # Set up SSH
 RUN mkdir /var/run/sshd
