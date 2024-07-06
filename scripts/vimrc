@@ -71,7 +71,8 @@ nmap #l :call PreservedHyphenWordYankExec("BLines '")<cr>
 nmap #L :call PreservedHyphenWordYankExec("BLinesNoSort '")<cr>
 nmap !e :call SaveToJumplistIfOK("BLinesEntriesCurrFile")<cr>
 nmap !E :call SaveToJumplistIfOK("BLinesEntriesAllFiles")<cr>
-nmap !r :!/root/.local/bin/tmlib.notes-task-notelog-grep.sh<cr>
+"nmap !r :!/root/.local/bin/tmlib.notes-task-notelog-grep.sh<cr>
+nmap !r :silent !/root/.local/bin/tmlib.notes-task-notelog-grep.sh<CR>:cfile /tmp/quickfix.vim<CR>
 
 let g:fzf_preview_window = ['up:60%', 'ctrl-/']
 

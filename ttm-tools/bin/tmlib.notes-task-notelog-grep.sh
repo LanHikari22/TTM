@@ -47,7 +47,10 @@ if [ ! -e "$quick_fix_file" ]; then
 fi
 
 # Open Vim and load the quickfix list
-vim -q $quick_fix_file
+#vim -q $quick_fix_file
 
 # cleanup
-rm $quick_fix_file
+#rm $quick_fix_file
+
+# Get the parent process ID (PPID)
+#ppid=$(ps -o ppid= -p $$)
