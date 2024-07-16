@@ -73,13 +73,16 @@ class Item:
         m1 = p1.match(line)
         if not m1:
             return -1, None, None
+        whole_box = m1.groups()[0]
+
+        # log_debug(f'whole_box: {whole_box}, line: {line}')
 
         p2 = re.compile(f'.*?{regex_groups}')
-        m2 = p2.match(line)
+        m2 = p2.match(whole_box)
         if not m2:
             return -2, None, None
         
-        return (0, m1.groups()[0], m2.groups())
+        return (0, whole_box, m2.groups())
 
     @staticmethod
     def parse(item_type: ItemType, line: str, verbose=False) -> Optional['Item']:
@@ -96,10 +99,10 @@ class Item:
         RE_REF_COUNT_GRP = '\[Refs (\d+)\]'
         RE_OBJECTIVE_STATUS = '\([-!XAB]\)'
         RE_OBJECTIVE_STATUS_GRP = '\(([-!XAB])\)'
-        RE_CITE_RELATION_FROM = r'.*/.*::.*/'
-        RE_CITE_RELATION_FROM_GRP = r'.*/(.*)::(.*)/'
-        RE_CITE_RELATION_TO = r'.*\\.*::.*\\'
-        RE_CITE_RELATION_TO_GRP = r'.*\\(.*)::(.*)\\'
+        RE_CITE_RELATION_FROM = r'/[^\s]*::[^\s]*?/'
+        RE_CITE_RELATION_FROM_GRP = r'/([^\s]*?)::([^\s]*?)/'
+        RE_CITE_RELATION_TO = r'\\[^\s]*?::[^\s]*?\\'
+        RE_CITE_RELATION_TO_GRP = r'\\([^\s]*?)::([^\s]*?)\\'
         RE_CITE_CODE_GRP = r'\[\^([^\]]+)\]'
         RE_CITE_CODE = r'\[\^.*?\]'
         RE_NOTE_DEF_DESC_GRP = f'{RE_TAB_LEVEL}{RE_NOTE_TOKEN}-\s*(.*)\s*{RE_TAGS}'
@@ -409,13 +412,20 @@ class Item:
             if len(_lines) > 1:
                 for _line in _lines[1:]:
                     _desc += '\n' + _line.strip()
-
+            
             # Let's parse the cite code for this citation
             cite_code = Item.parse(ItemType.CITE_CODE, _desc)
             if not cite_code or cite_code.value + ':' not in _desc:
                 if verbose:
                     log_error('Failed to parse cite_code')
                 return None
+
+            # The description must begin with the citation code and a ': ' to be valid.
+            if not _desc.startswith(cite_code.value + ': '):
+                if verbose:
+                    log_error('Did not start with citation code')
+                return None
+
             _desc = _desc.replace(cite_code.value + ':', '')
             _desc = ''.join(reversed(''.join(reversed(_desc)).strip())).strip()
 
@@ -444,9 +454,6 @@ class Item:
                 else:
                     break
                 _desc = _desc.replace(relation.value, '')
-
-            # Reverse the relations list since we find last first.
-            relations = list(reversed(relations))
 
             _desc = _desc.replace('_NEWWLINEE_', '\n')
 
@@ -588,7 +595,7 @@ class Item:
             return Item(item_type, m1.groups()[0], [kv('n', m2.groups()[0])])
 
         elif item_type == ItemType.CITE_RELATION:
-            def parse_cite_relation(is_from: bool):
+            def parse_cite_relation(line, is_from: bool):
                 if is_from:
                     cite_relation_regex = RE_CITE_RELATION_FROM
                     cite_relation_grp_regex = RE_CITE_RELATION_FROM_GRP
@@ -596,20 +603,28 @@ class Item:
                     cite_relation_regex = RE_CITE_RELATION_TO
                     cite_relation_grp_regex = RE_CITE_RELATION_TO_GRP
 
+                # log_debug(f'CITE_RELATION: line: {line}')
+
                 ec, whole_str, groups = cls.parse_whole_and_groups(line, cite_relation_regex, cite_relation_grp_regex)
                 if ec == -1:
                     if is_from:
-                        return parse_cite_relation(is_from=False)
+                        return parse_cite_relation(line, is_from=False)
                     return None
                 elif ec == -2 or len(groups) != 2:
                     if verbose:
                         log_error('Could not parse cite_relation groups')
                     return None
                 arr = groups
+                # log_debug(f'arr: {arr}')
+
+                # Do not parse past the identified area of interest
+                line_area = line[:line.index(whole_str) + len(whole_str)]
+                # log_debug(f'line: {line}')
+                # log_debug(f'line_area: {line_area}')
 
                 # Parse Status (optional)
-                p3 = re.compile(f'.* *({RE_OBJECTIVE_STATUS} {cite_relation_regex})')
-                m3 = p3.match(line)
+                p3 = re.compile(f'.*?({RE_OBJECTIVE_STATUS} {cite_relation_regex})')
+                m3 = p3.match(line_area)
                 if m3:
                     whole_str = m3.groups()[0]
 
@@ -630,8 +645,12 @@ class Item:
                 if status:
                     items.append(status)
 
-                return Item(item_type, whole_str, items)
-            return parse_cite_relation(is_from=True)
+                result = Item(item_type, whole_str, items)
+
+                # log_debug(f'CITE_RELATION: result: {result}')
+
+                return result
+            return parse_cite_relation(line, is_from=True)
 
         elif item_type == ItemType.CITE_CODE:
             ec, whole_str, groups = cls.parse_whole_and_groups(line, RE_CITE_CODE, RE_CITE_CODE_GRP)
@@ -718,7 +737,7 @@ def get_kv(part, key):
 
     return kv_part.value[key]
 
-def process_note_file_lines(lines, incl_logs=False) -> List[Tuple[int, Item]]:
+def process_note_file_lines(lines, incl_logs=False, incl_refs=False) -> List[Tuple[int, Item]]:
     parsed_lines = []
     for i, line in enumerate(lines):
         item = Item.parse(ItemType.ENTRY_DEFINITION_LINE, line)
@@ -731,12 +750,7 @@ def process_note_file_lines(lines, incl_logs=False) -> List[Tuple[int, Item]]:
             parsed_lines.append((i+1, item))
             continue
 
-        if incl_logs:
-            item = Item.parse(ItemType.LOG_LINE, line)
-            if item:
-                parsed_lines.append((i+1, item))
-                continue
-
+        def process_multiline(parsed_lines, line, item_type):
             # It is possible that the current line is a multiline continuation of the last line.
             if len(parsed_lines) > 0:
                 cur_tab_level = len(Item.parse(ItemType.TAB_LEVEL, line).value) + 1 # +1: margin, missing space between '-' and the desc.
@@ -752,17 +766,42 @@ def process_note_file_lines(lines, incl_logs=False) -> List[Tuple[int, Item]]:
                     combined_lines = prev_lines + '\n' + line
 
                     # Let's reparse the last element.
-                    item = Item.parse(ItemType.LOG_LINE, combined_lines)
+                    item = Item.parse(item_type, combined_lines)
                     if item:
                         parsed_lines[-1] = (parsed_lines[-1][0], item)
 
+
+        if incl_refs:
+            item = Item.parse(ItemType.CITATION_LINE, line)
+            if item:
+                parsed_lines.append((i+1, item))
+                continue
+            else:
+                if incl_logs:
+                    item = Item.parse(ItemType.LOG_LINE, line)
+                    if item:
+                        parsed_lines.append((i+1, item))
+                        continue
+
+                    process_multiline(parsed_lines, line, ItemType.LOG_LINE)
+
+            process_multiline(parsed_lines, line, ItemType.CITATION_LINE)
+
+        elif incl_logs:
+            item = Item.parse(ItemType.LOG_LINE, line)
+            if item:
+                parsed_lines.append((i+1, item))
+                continue
+
+            process_multiline(parsed_lines, line, ItemType.LOG_LINE)
+
     return parsed_lines
 
-def process_note_file(filename, incl_logs=False) -> List[Tuple[int, Item]]:
+def process_note_file(filename, incl_logs=False, incl_refs=False) -> List[Tuple[int, Item]]:
     with open(filename, 'r') as f:
         lines = f.readlines()
     
-    return process_note_file_lines(lines, incl_logs)
+    return process_note_file_lines(lines, incl_logs, incl_refs)
     
 def find_item_at_lineno(parsed_items: List[Tuple[int, Item]], lineno: int) -> Item:
     for i, item in parsed_items:
@@ -1013,7 +1052,6 @@ class UnitTests(unittest.TestCase):
         tab_level = item.get_part(ItemType.TAB_LEVEL).value
         self.assertEqual(tab_level, '               ')
 
-
         time_date = item.get_part(ItemType.TIME_DATE)
         self.assertEqual(time_date.value, '240624-W26U 18:52')
         self.assertEqual(get_kv(time_date, 'date_code'), '240624')
@@ -1028,29 +1066,39 @@ class UnitTests(unittest.TestCase):
 
     # Parsing Citation Relations
     def test_can_parse_citation_relations(self):
-        test_lines = [
-            '/T::cites/',
-            '/T::milestone_of/',
-            '(-) /T::blocks/',
-            '(!) /T::blocks/',
-            '/[^ATH1]::author_of/',
-            '\\has_milestone::T\\',
+        test_lines_dict = {
+            # G0: Group of passing examples that are simple, ie the entire input is the item value
+            'G0.0': '/T::cites/',
+            'G0.1': '/T::milestone_of/',
+            'G0.2': '(-) /T::blocks/',
+            'G0.3': '(!) /T::blocks/',
+            'G0.4': '/[^ATH1]::author_of/',
+            'G0.5': '\\has_milestone::T\\',
 
-            # False examples
-            '/T::cites/ /T::blocks/',
-        ]
+            # G1: Group of passing examples that aren't simple, ie only part of the input is the item value
+            'G1.0': '/T::is_self/ AAA BBB CCC/DDD',
+            'G1.1': '/T::is_self/ TaskGraph::MSTN: Able to render graph representation of tasks/citations',
 
-        for test_line in test_lines:
+            # G2: False examples, although they parse. Treat this as warning.
+            'G2.0': '/T::cites/ /T::blocks/',
+        }
+
+        for test_no in test_lines_dict:
+            test_line = test_lines_dict[test_no]
+
             item = Item.parse(ItemType.CITE_RELATION, test_line)
-            self.assertTrue(item != None)
 
             # Just immediately display it for quick debugging
             item_str = str(item) 
-            # log_debug(test_line)
+            # log_debug(f'citation_relations: test input: {test_no}: {test_line}')
             # log_debug(item_str)
 
-            self.assertEqual(item.value, test_line)
+            self.assertTrue(item != None, f'Failed to parse example {test_no}')
 
+            # For group G0, The test line is itself the expected citation entity to be parsed
+            if test_no.startswith('G0'):
+                self.assertEqual(item.value, test_line)
+            
             if test_line == '/T::cites/':
                 self.assertEqual(get_kv(item, 'node'), 'T')
                 self.assertEqual(get_kv(item, 'relation'), 'cites')
@@ -1086,16 +1134,31 @@ class UnitTests(unittest.TestCase):
                 self.assertEqual(get_kv(item, 'relation'), 'has_milestone')
                 self.assertEqual(get_kv(item, 'is_from'), 'False')
                 self.assertEqual(get_kv(item, 'status'), None)
-            
-            # False Examples
 
-            # Algorithm cannot handle the existence of multiple entities. Gives only last.
-            if test_line == '/T::cites/ /T::blocks/':
+            # Group G1, The item.value cannot be inferred to be automatically the test line.
+            if test_line == '/T::is_self/ AAA BBB CCC/DDD':
+                self.assertEqual(item.value, '/T::is_self/')
                 self.assertEqual(get_kv(item, 'node'), 'T')
-                self.assertEqual(get_kv(item, 'relation'), 'blocks')
+                self.assertEqual(get_kv(item, 'relation'), 'is_self')
                 self.assertEqual(get_kv(item, 'is_from'), 'True')
                 self.assertEqual(get_kv(item, 'status'), None)
 
+            # 'G1.1': '/T::is_self/ TaskGraph::MSTN: Able to render graph representation of tasks/citations',
+            if test_no == 'G1.1':
+                self.assertEqual(item.value, '/T::is_self/')
+                self.assertEqual(get_kv(item, 'node'), 'T')
+                self.assertEqual(get_kv(item, 'relation'), 'is_self')
+                self.assertEqual(get_kv(item, 'is_from'), 'True')
+                self.assertEqual(get_kv(item, 'status'), None)
+            
+            # Group G2, False Examples but they parse. Ie these are false positives. Be warned.
+
+            # Algorithm cannot handle the existence of multiple entities. Gives only first.
+            if test_line == '/T::cites/ /T::blocks/':
+                self.assertEqual(get_kv(item, 'node'), 'T')
+                self.assertEqual(get_kv(item, 'relation'), 'cites')
+                self.assertEqual(get_kv(item, 'is_from'), 'True')
+                self.assertEqual(get_kv(item, 'status'), None)
 
     def test_can_parse_cite_codes(self):
         test_lines = [
@@ -1150,28 +1213,41 @@ class UnitTests(unittest.TestCase):
 
     def test_can_parse_citation_lines(self):
         test_lines_dict = {
-            '0': '- 240701-W27T 21:52 - [^T1]: Update Task-Notelog solution to work with argparse interface #548991db',
-            '1': '   - 240708-W28M 06:57 - [^CMT1]: 5ff942c (HEAD -> main) feat[TaskGraph]: Added ArgParse and Clustered multiline grep',
-            '2': '- 240701-W27S 18:31 - [^FL2.1]: WSL, $HOME/src/ttm/ttm-tools/bin/tmlib.notes-citations-processor.py',
-            '3': '   - 240701-W27M 09:02 - [^T5]: (-) /T::milestone_of/ TaskGraph: Impl parsing for Citation Notelog #e142cb79',
-            '4': '                    - 240701-W27M 04:47 - [^T1]: /T::spawned_by/    TaskGraph: Extend tmlib.note-parser to account for multiline log lines\n' +
-                 '                                                 (!) /T::solved_by/',
+            'G0.0': '- 240701-W27T 21:52 - [^T1]: Update Task-Notelog solution to work with argparse interface #548991db',
+            'G0.1': '   - 240708-W28M 06:57 - [^CMT1]: 5ff942c (HEAD -> main) feat[TaskGraph]: Added ArgParse and Clustered multiline grep',
+            'G0.2': '- 240701-W27S 18:31 - [^FL2.1]: WSL, $HOME/src/ttm/ttm-tools/bin/tmlib.notes-citations-processor.py',
+            'G0.3': '   - 240701-W27M 09:02 - [^T5]: (-) /T::milestone_of/ TaskGraph: Impl parsing for Citation Notelog #e142cb79',
+            'G0.4': '                    - 240701-W27M 04:47 - [^T1]: /T::spawned_by/    TaskGraph: Extend tmlib.note-parser to account for multiline log lines\n' +
+                    '                                                 (!) /T::solved_by/',
+            'G0.5': '                - 240701-W27R 19:58 - [^T1]: /T::is_self/ TaskGraph::MSTN: Able to render graph representation of tasks/citations\n' +
+                    '                                             (-) /T::blocks(milestone)/',
+
+            # False non-parsing examples
+            'NP1': '- 240701-W27S 18:45 - With help of [^GT1]:',
+            'NP2': '- 240701-W27M 06:00 - [^NT1]::Iteration3 shows that we successfully trigger the condition on each two new lines for the last long line.',
         }
 
         for test_no in test_lines_dict:
             test_line = test_lines_dict[test_no]
             item = Item.parse(ItemType.CITATION_LINE, test_line)
-            self.assertTrue(item != None)
 
             # Just immediately display it for quick debugging
             item_str = str(item) 
-            log_debug(f'test_line: {test_line}')
+            log_debug(f'citation lines: test input: {test_no}: {test_line}')
             log_debug(item_str)
 
+            # False non-parsing examples
+
+            if test_no.startswith('NP'):
+                self.assertTrue(item == None)
+                continue
+
+            # Parsing Examples
+            self.assertTrue(item != None)
             self.assertEqual(item.value, test_line)
 
-            # '0': '- 240701-W27T 21:52 - [^T1]: Update Task-Notelog solution to work with argparse interface #548991db',
-            if test_no == '0':
+            # 'G0.0': '- 240701-W27T 21:52 - [^T1]: Update Task-Notelog solution to work with argparse interface #548991db',
+            if test_no == 'G0.0':
                 tab_level = item.get_part(ItemType.TAB_LEVEL).value
                 self.assertEqual(tab_level, '')
 
@@ -1196,8 +1272,8 @@ class UnitTests(unittest.TestCase):
                 relations = item.get_part(ItemType.CITE_RELATION)
                 self.assertEqual(relations, None)
 
-            # '1': '   - 240708-W28M 06:57 - [^CMT1]: 5ff942c (HEAD -> main) feat[TaskGraph]: Added ArgParse and Clustered multiline grep',
-            if test_no == '1':
+            # 'G0.1': '   - 240708-W28M 06:57 - [^CMT1]: 5ff942c (HEAD -> main) feat[TaskGraph]: Added ArgParse and Clustered multiline grep',
+            if test_no == 'G0.1':
                 tab_level = item.get_part(ItemType.TAB_LEVEL).value
                 self.assertEqual(tab_level, '   ')
 
@@ -1222,8 +1298,8 @@ class UnitTests(unittest.TestCase):
                 relations = item.get_part(ItemType.CITE_RELATION)
                 self.assertEqual(relations, None)
 
-            # '2': '- 240701-W27S 18:31 - [^FL2.1]: WSL, $HOME/src/ttm/ttm-tools/bin/tmlib.notes-citations-processor.py'
-            if test_no == '2':
+            # 'G0.2': '- 240701-W27S 18:31 - [^FL2.1]: WSL, $HOME/src/ttm/ttm-tools/bin/tmlib.notes-citations-processor.py'
+            if test_no == 'G0.2':
                 tab_level = item.get_part(ItemType.TAB_LEVEL).value
                 self.assertEqual(tab_level, '')
 
@@ -1248,8 +1324,8 @@ class UnitTests(unittest.TestCase):
                 relations = item.get_part(ItemType.CITE_RELATION)
                 self.assertEqual(relations, None)
 
-            # '3': '   - 240701-W27M 09:02 - [^T5]: (-) /T::milestone_of/ TaskGraph: Impl parsing for Citation Notelog #e142cb79',
-            if test_no == '3':
+            # 'G0.3': '   - 240701-W27M 09:02 - [^T5]: (-) /T::milestone_of/ TaskGraph: Impl parsing for Citation Notelog #e142cb79',
+            if test_no == 'G0.3':
                 tab_level = item.get_part(ItemType.TAB_LEVEL).value
                 self.assertEqual(tab_level, '   ')
 
@@ -1278,9 +1354,9 @@ class UnitTests(unittest.TestCase):
                 self.assertEqual(get_kv(relations, 'status'), '-')
         
 
-            # '4': '                    - 240701-W27M 04:47 - [^T1]: /T::spawned_by/    TaskGraph: Extend tmlib.note-parser to account for multiline log lines\n' +
-            #      '                                                 (!) /T::solved_by/',
-            if test_no == '4':
+            # 'G0.4': '                    - 240701-W27M 04:47 - [^T1]: /T::spawned_by/    TaskGraph: Extend tmlib.note-parser to account for multiline log lines\n' +
+            #         '                                                 (!) /T::solved_by/',
+            if test_no == 'G0.4':
                 tab_level = item.get_part(ItemType.TAB_LEVEL).value
                 self.assertEqual(tab_level, '                    ')
 
@@ -1313,6 +1389,42 @@ class UnitTests(unittest.TestCase):
                 self.assertEqual(get_kv(relations[1], 'relation'), 'solved_by')
                 self.assertEqual(get_kv(relations[1], 'is_from'), 'True')
                 self.assertEqual(get_kv(relations[1], 'status'), '!')
+
+            # 'G0.5': '                - 240701-W27R 19:58 - [^T1]: /T::is_self/ TaskGraph::MSTN: Able to render graph representation of tasks/citations\n' +
+            #         '                                             (-) /T::blocks(milestone)/',
+            if test_no == 'G0.5':
+                tab_level = item.get_part(ItemType.TAB_LEVEL).value
+                self.assertEqual(tab_level, '                ')
+
+                time_date = item.get_part(ItemType.TIME_DATE)
+                self.assertEqual(time_date.value, '240701-W27R 19:58')
+                self.assertEqual(get_kv(time_date, 'date_code'), '240701')
+                self.assertEqual(get_kv(time_date, 'week_num'), '27')
+                self.assertEqual(get_kv(time_date, 'MTWRFSU'), 'R')
+                self.assertEqual(get_kv(time_date, 'HH'), '19')
+                self.assertEqual(get_kv(time_date, 'MM'), '58')
+
+                cite_code = item.get_part(ItemType.CITE_CODE)
+                self.assertEqual(get_kv(cite_code, 'code'), 'T')
+                self.assertEqual(get_kv(cite_code, 'n'), '1')
+
+                self.assertEqual(get_kv(item, 'uuid'), None)
+
+                desc = get_kv(item, 'desc')
+                self.assertTrue(desc.startswith('TaskGraph::MSTN: Able to render'))
+                self.assertTrue(desc.endswith('tasks/citations'))
+
+                relations = item.get_part(ItemType.CITE_RELATION)
+                self.assertTrue(type(relations) is list)
+                self.assertTrue(len(relations) == 2)
+                self.assertEqual(get_kv(relations[0], 'node'), 'T')
+                self.assertEqual(get_kv(relations[0], 'relation'), 'is_self')
+                self.assertEqual(get_kv(relations[0], 'is_from'), 'True')
+                self.assertEqual(get_kv(relations[0], 'status'), None)
+                self.assertEqual(get_kv(relations[1], 'node'), 'T')
+                self.assertEqual(get_kv(relations[1], 'relation'), 'blocks(milestone)')
+                self.assertEqual(get_kv(relations[1], 'is_from'), 'True')
+                self.assertEqual(get_kv(relations[1], 'status'), '-')
 
         pass
 
