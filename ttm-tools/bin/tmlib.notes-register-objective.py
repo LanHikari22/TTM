@@ -1,9 +1,11 @@
 #!/bin/python3
 
+import os
 import sys
 import subprocess
 import re
 import fileinput
+import shutil
 import importlib.util
 from importlib import import_module
 from enum import Enum, auto
@@ -17,6 +19,17 @@ ntp = note_parser
 
 prn_error = print
 prn_warn = print
+
+def duplicate_file_into_temp(filename):
+    import tempfile
+    temp_file = tempfile.NamedTemporaryFile(delete=False, mode='w', dir=os.path.dirname(filename))
+
+    # Write the content to a temporary file
+    with open(temp_file.name, 'w') as write_fp:
+        with open(filename, 'r') as read_fp:
+            write_fp.write(read_fp.read())
+    
+    return temp_file.name
 
 def register_objective(filename, lineno) -> str:
     parsed_items = ntp.process_note_file(filename)
@@ -69,16 +82,24 @@ def register_objective(filename, lineno) -> str:
     #print('modified_built', build_objective_line_item(cur_item))
 
     # Inplace modify the file with the new content. The prints in this loop are directed into the file.
-    for line in fileinput.input(filename, inplace=True):
-        if line == cur_item.value:
-            print(ntp.build_objective_line_item(cur_item) + '\n', end='')
-        else:
-            print(line, end='')
+    try:
+        # Create temporary file in case our solution here fails and destroys the file!
+        tmp_filename = duplicate_file_into_temp(filename)
+
+        for line in fileinput.input(filename, inplace=True):
+            if line == cur_item.value:
+                print(ntp.build_objective_line_item(cur_item) + '\n', end='')
+            else:
+                print(line, end='')
+
+        os.remove(tmp_filename)
+    except Exception:
+        shutil.move(tmp_filename, filename)
+        raise 
 
     return new_uuid
 
 if __name__ == '__main__':
     filename = sys.argv[1]
     lineno = int(sys.argv[2])
-    #print(f'Thank you for using vim! Your filename is {filename} and your lineno is {lineno}! Its so amazing!')
     register_objective(filename, lineno)

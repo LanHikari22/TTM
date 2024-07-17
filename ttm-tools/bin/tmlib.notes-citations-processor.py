@@ -117,6 +117,7 @@ def sha256_hash(s):
     import hashlib
     return hashlib.sha256(s.encode()).hexdigest()[:8]
 
+
 def process_global_node_id(item, category, desc):
     # First, check if the node has a uuid, then that will be its unique node_id
     uuid = ntp.get_kv(item, 'uuid')
@@ -207,6 +208,7 @@ def parse_citation_dataset(filename: str) -> pd.DataFrame:
             records.append(record)
     
     return pd.DataFrame.from_records(records)
+
 
 def main(args: argparse.Namespace):
     log_debug(f'args: {args}')

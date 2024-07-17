@@ -5,6 +5,7 @@ import os
 import subprocess
 import re
 import fileinput
+import shutil
 import importlib.util
 from importlib import import_module
 from enum import Enum, auto
@@ -24,6 +25,18 @@ rgo = reg_objective
 prn_error = print
 prn_warn = print
 prn_info = print
+
+def duplicate_file_into_temp(filename):
+    import tempfile
+    temp_file = tempfile.NamedTemporaryFile(delete=False, mode='w', dir=os.path.dirname(filename))
+
+    # Write the content to a temporary file
+    with open(temp_file.name, 'w') as write_fp:
+        with open(filename, 'r') as read_fp:
+            write_fp.write(read_fp.read())
+    
+    return temp_file.name
+
 
 def register_task(filename, lineno) -> str:
     parsed_items = ntp.process_note_file(filename)
@@ -119,11 +132,20 @@ def register_task(filename, lineno) -> str:
     #print('modified_built', ntp.build_note_def_line_item(cur_item))
 
     # Inplace modify the file with the new content. The prints in this loop are directed into the file.
-    for line in fileinput.input(filename, inplace=True):
-        if line == cur_item.value:
-            print(ntp.build_note_def_line_item(cur_item) + '\n', end='')
-        else:
-            print(line, end='')
+    try:
+        # Create temporary file in case our solution here fails and destroys the file!
+        tmp_filename = duplicate_file_into_temp(filename)
+
+        for line in fileinput.input(filename, inplace=True):
+            if line == cur_item.value:
+                print(ntp.build_note_def_line_item(cur_item) + '\n', end='')
+            else:
+                print(line, end='')
+
+        os.remove(tmp_filename)
+    except Exception:
+        shutil.move(tmp_filename, filename)
+        raise 
 
 
     return cur_item_uuid

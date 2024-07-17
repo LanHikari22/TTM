@@ -529,7 +529,6 @@ class Item:
 
         elif item_type == ItemType.KV:
             raise Exception('unparsable')
-            pass
 
         elif item_type == ItemType.NOTE_TOKEN:
             p1 = re.compile(f'\s*({RE_NOTE_TOKEN})')
@@ -896,7 +895,6 @@ def build_objective_line_item(item: Item) -> str:
     MTWRFSU = time_date.get_part(ItemType.KV, key='MTWRFSU').value['MTWRFSU']
     HH = time_date.get_part(ItemType.KV, key='HH').value['HH']
     MM = time_date.get_part(ItemType.KV, key='MM').value['MM']
-    status = time_date.get_part(ItemType.KV, key='MM').value['MM']
 
     status = item.get_part(ItemType.KV, key='status').value['status']
     desc = item.get_part(ItemType.KV, key='desc').value['desc'].strip()
@@ -921,6 +919,12 @@ def build_objective_line_item(item: Item) -> str:
         for part in tags.parts:
             if 'childno' in part.value.keys():
                 tag = '.' + list(part.value.values())[0]
+                if tag.startswith('..'):
+                    # Not sure exactly why we add an extra '.', it may be the logical built
+                    # representation is consistent with the parsed one. But in case of modifying
+                    # a current line tags, we already have the . added.
+                    tag = tag[1:]
+                            
             else:
                 tag = list(part.value.values())[0]
 
