@@ -71,8 +71,10 @@ nmap #l :call PreservedHyphenWordYankExec("BLines '")<cr>
 nmap #L :call PreservedHyphenWordYankExec("BLinesNoSort '")<cr>
 nmap !e :call SaveToJumplistIfOK("BLinesEntriesCurrFile")<cr>
 nmap !E :call SaveToJumplistIfOK("BLinesEntriesAllFiles")<cr>
-nmap !r :silent !/root/.local/bin/tmlib.notes-task-notelog-grep.sh<CR>:cfile /tmp/quickfix.vim<CR>:3copen<CR>:wincmd p<CR>:redraw!<CR>
-nmap !R :silent !/root/.local/bin/tmlib.notes-task-notelog-grep.sh --clustered<CR>:cfile /tmp/quickfix.vim<CR>:3copen<CR>:wincmd p<CR>:redraw!<CR>
+nmap !r :silent !/root/.local/bin/tmlib.notes-task-notelog-grep.sh group-task-notelog<CR>:cfile /tmp/quickfix.vim<CR>:3copen<CR>:wincmd p<CR>:redraw!<CR>
+nmap !R :silent !/root/.local/bin/tmlib.notes-task-notelog-grep.sh group-task-notelog --clustered<CR>:cfile /tmp/quickfix.vim<CR>:3copen<CR>:wincmd p<CR>:redraw!<CR>
+nmap !c :silent !/root/.local/bin/tmlib.notes-task-notelog-grep.sh -vv group-task-notelog-reference<CR>:cfile /tmp/quickfix.vim<CR>:3copen<CR>:wincmd p<CR>:redraw!<CR>
+nmap !C :silent !/root/.local/bin/tmlib.notes-task-notelog-grep.sh -vv group-task-notelog-reference --clustered<CR>:cfile /tmp/quickfix.vim<CR>:3copen<CR>:wincmd p<CR>:redraw!<CR>
 
 let g:fzf_preview_window = ['up:60%', 'ctrl-/']
 

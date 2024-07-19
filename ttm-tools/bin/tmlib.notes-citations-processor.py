@@ -38,7 +38,7 @@ def log_debug(s): return log_any(s, 'DEBUG', verbose_level=2)
 def log_trace(s): return log_any(s, 'TRACE', verbose_level=3)
 
 
-def cluster_items_by_objective(parsed_items):
+def cluster_items_by_objective(parsed_items, cb_filter_items=None):
 
     groups = []
     cur_group = []
@@ -54,13 +54,17 @@ def cluster_items_by_objective(parsed_items):
             if len(cur_group) == 0:
                 continue
 
+        # callback to filter items in the group. Though a group of one task should be guaranteed.
+        if item.item_type != ntp.ItemType.OBJECTIVE_LINE:
+            if cb_filter_items and not cb_filter_items(item):
+                continue
 
         cur_group.append((lineno, item))
 
     return groups
 
 
-def process_task_notelog_entires_for_file(filename: str, clustered=False):
+def process_task_notelog_entries_for_file(filename: str, clustered=False):
     parsed_items = ntp.process_note_file(filename, incl_logs=True)
     task_grouped = cluster_items_by_objective(parsed_items)
 
@@ -111,6 +115,194 @@ def process_task_notelog_entires_for_file(filename: str, clustered=False):
 
             # Finally, all these lines are out entry.
             print('/ENTRY')
+
+
+def item_contains_cite_code(item):
+    desc = ntp.get_kv(item, 'desc')
+
+    cite_code_item = ntp.Item.parse(ntp.ItemType.CITE_CODE, desc)
+    if not cite_code_item:
+        return False
+    
+    return True
+    
+def item_contains_parent_cite_code(item):
+    desc = ntp.get_kv(item, 'desc')
+
+    cite_code = ntp.Item.parse(ntp.ItemType.CITE_CODE, desc)
+    if not cite_code:
+        return False
+    
+    codes = ntp.get_kv(cite_code, 'code')
+    if len(codes) < 2:
+        return False
+    
+    if codes[0] in ['P', 'PRJ']:
+        return True
+    
+    return False
+
+
+def item_contains_nonparent_cite_code(item):
+    return item_contains_cite_code(item) and \
+       not item_contains_parent_cite_code(item)
+
+
+def _format_note_desc(note_item):
+    note_item_value = note_item.value.strip()
+    if '\n' in note_item_value:
+        note_item_value = note_item_value.replace('\n\n', '\n')
+    
+    return note_item_value
+
+
+def process_task_notelog_ref_entries_for_file(filename: str, clustered=False):
+    parsed_items = ntp.process_note_file(filename, incl_refs=True, incl_logs=True)
+
+    task_parsed_items = parsed_items \
+        | pipe.filter(lambda lineno_item: lineno_item[1].item_type == ntp.ItemType.OBJECTIVE_LINE) \
+        | pipe.Pipe(list)
+
+    task_notes_parsed_items = parsed_items \
+        | pipe.filter(lambda lineno_item: lineno_item[1].item_type == ntp.ItemType.OBJECTIVE_LINE or \
+                                          lineno_item[1].item_type == ntp.ItemType.LOG_LINE) \
+        | pipe.Pipe(list)
+
+    task_notes_parsed_items = parsed_items \
+        | pipe.filter(lambda lineno_item: lineno_item[1].item_type == ntp.ItemType.OBJECTIVE_LINE or \
+                                          lineno_item[1].item_type == ntp.ItemType.LOG_LINE) \
+        | pipe.Pipe(list)
+
+    task_refs_parsed_items = parsed_items \
+        | pipe.filter(lambda lineno_item: lineno_item[1].item_type == ntp.ItemType.OBJECTIVE_LINE or \
+                                          lineno_item[1].item_type == ntp.ItemType.CITATION_LINE) \
+        | pipe.Pipe(list)
+
+
+    task_notes_grouped = cluster_items_by_objective(task_notes_parsed_items, item_contains_nonparent_cite_code)
+    task_notes_parent_grouped = cluster_items_by_objective(task_notes_parsed_items, item_contains_parent_cite_code)
+    task_refs_grouped = cluster_items_by_objective(task_refs_parsed_items)
+
+    if len(task_parsed_items) == 0:
+        return
+
+    # The entries cover the Tasks x Citations space, so there is always a task and a citation.
+    #   It should be exactly tasks_refs_grouped.
+    for i_grp in range(len(task_refs_grouped)):
+        if len(task_refs_grouped[i_grp]) <= 1:
+            # We will not accept tasks with no refs.
+            continue
+
+        # Parse the task
+        task_lineno, task_item = task_refs_grouped[i_grp][0]
+        task_uuid = ntp.get_tag(task_item, 'uuid')
+
+        # Now let's process the group ref items
+        for ref_lineno, ref_item in task_refs_grouped[i_grp][1:]:
+            if ref_item.item_type != ntp.ItemType.CITATION_LINE:
+                log_error(f'Encountered {ref_item.item_type} when we only expect CITATION_LINE')
+                return
+            
+            desc = ntp.get_kv(ref_item, 'desc')
+
+            cite_code = ref_item.get_part(ntp.ItemType.CITE_CODE)
+            if not cite_code:
+                log_error('Citation line must have a cite_code')
+                return
+            
+            # Search the user notelogs for presence of this cite_code
+            if not clustered:
+                for note_lineno, note_item in task_notes_grouped[i_grp]:
+                    note_desc = ntp.get_kv(note_item, 'desc')
+
+                    if cite_code.value in note_desc:
+                        print(filename + ':' + str(note_lineno) + ':' + task_item.value.strip())
+                        print(filename + ':' + str(note_lineno) + ':' + ref_item.value.strip())
+                        print(filename + ':' + str(note_lineno) + ':' + _format_note_desc(note_item))
+                        print('/ENTRY')
+                
+            else:
+                # This is clustered by notelog
+                notelogs = []
+                for note_lineno, note_item in task_notes_grouped[i_grp]:
+                    note_desc = ntp.get_kv(note_item, 'desc')
+
+                    if cite_code.value in note_desc:
+                        notelogs.append(filename + ':' + str(ref_lineno) + ':' + _format_note_desc(note_item))
+                
+                if len(notelogs) != 0:
+                    print(filename + ':' + str(ref_lineno) + ':' + task_item.value.strip())
+                    print(filename + ':' + str(ref_lineno) + ':' + ref_item.value.strip())
+                    for notelog in notelogs:
+                        print(notelog)
+                    print('/ENTRY')
+
+        # Now let's process the non-obvious cases. notelogs can refer to citations from the parent branch!
+        task_branch = ntp.find_parent_branch_items(task_parsed_items, task_lineno)
+
+        for parent_task_lineno, parent_task in task_branch:
+            i_prn_grp = None
+
+            # Reverse find the index for the parent to search the groups
+            for j_grp in range(len(task_refs_grouped)):
+                if len(task_refs_grouped[j_grp]) <= 1:
+                    # We will not accept tasks with no refs.
+                    continue
+
+                # Parse the task
+                parent_lineno, parent_item = task_refs_grouped[j_grp][0]
+
+                if parent_lineno == parent_task_lineno:
+                    i_prn_grp = j_grp
+                    break
+            
+            if i_prn_grp == None:
+                # Could not find a parent with refs.
+                continue
+
+            # Now we process this parent's references
+            for ref_lineno, ref_item in task_refs_grouped[i_prn_grp][1:]:
+                if ref_item.item_type != ntp.ItemType.CITATION_LINE:
+                    log_error(f'Encountered {ref_item.item_type} when we only expect CITATION_LINE')
+                    return
+                
+                parent_cite_code = ref_item.get_part(ntp.ItemType.CITE_CODE)
+                if not parent_cite_code:
+                    log_error('Citation line must have a cite_code')
+                    return
+                
+                # Now we search the current task's parent-referencing notelogs to see if they match
+                # any parent_cite_code
+                if not clustered:
+                    for note_lineno, note_item in task_notes_parent_grouped[i_grp]:
+                        note_desc = ntp.get_kv(note_item, 'desc')
+
+                        if parent_cite_code.value in note_desc or \
+                           parent_cite_code.value.replace('^', '^P::') in note_desc or \
+                           parent_cite_code.value.replace('^', '^PRJ::') in note_desc:
+                            print(filename + ':' + str(note_lineno) + ':' + task_item.value.strip())
+                            print(filename + ':' + str(note_lineno) + ':' + parent_task.value.strip())
+                            print(filename + ':' + str(note_lineno) + ':' + ref_item.value.strip())
+                            print(filename + ':' + str(note_lineno) + ':' + _format_note_desc(note_item))
+                            print('/ENTRY')
+                else:
+                    # This is clustered by notelog
+                    notelogs = []
+                    for note_lineno, note_item in task_notes_parent_grouped[i_grp]:
+                        note_desc = ntp.get_kv(note_item, 'desc')
+
+                        if parent_cite_code.value in note_desc or \
+                           parent_cite_code.value.replace('^', '^P::') in note_desc or \
+                           parent_cite_code.value.replace('^', '^PRJ::') in note_desc:
+                            notelogs.append(filename + ':' + str(ref_lineno) + ':' + _format_note_desc(note_item))
+                    
+                    if len(notelogs) != 0:
+                        print(filename + ':' + str(ref_lineno) + ':' + task_item.value.strip())
+                        print(filename + ':' + str(ref_lineno) + ':' + parent_task.value.strip())
+                        print(filename + ':' + str(ref_lineno) + ':' + ref_item.value.strip())
+                        for notelog in notelogs:
+                            print(notelog)
+                        print('/ENTRY')
 
 
 def sha256_hash(s):
@@ -211,6 +403,7 @@ def parse_citation_dataset(filename: str) -> pd.DataFrame:
 
 
 def main(args: argparse.Namespace):
+    log_debug('==================================================================================')
     log_debug(f'args: {args}')
 
     directory = args.directory
@@ -226,11 +419,13 @@ def main(args: argparse.Namespace):
         try:
             if '.git' in filename:
                 continue
+            
+            log_debug(f'filename: {filename}')
 
             f = os.path.join(directory, filename)
             if os.path.isfile(f):
                 if args.subcommand == 'group-task-notelog':
-                    process_task_notelog_entires_for_file(filename, clustered=args.clustered)
+                    process_task_notelog_entries_for_file(filename, clustered=args.clustered)
 
                 if args.subcommand == 'parse-citation-dataset':
                     df = parse_citation_dataset(filename)
@@ -238,6 +433,9 @@ def main(args: argparse.Namespace):
                         df_tot = df
                     else:
                         df_tot = pd.concat([df_tot, df], ignore_index=True)
+
+                if args.subcommand == 'group-task-notelog-reference':
+                    process_task_notelog_ref_entries_for_file(filename, clustered=args.clustered)
 
         except UnicodeDecodeError:
             pass
@@ -264,6 +462,11 @@ def cmdline_args():
     subparsers.required = True
 
     sp = subparsers.add_parser('group-task-notelog', 
+                               help='Generates task-notelog entries for multiline grep')
+    sp.add_argument("--clustered", action="store_true",
+                    help="Show only one entry per task with multiple notelogs")
+
+    sp = subparsers.add_parser('group-task-notelog-reference', 
                                help='Generates task-notelog entries for multiline grep')
     sp.add_argument("--clustered", action="store_true",
                     help="Show only one entry per task with multiple notelogs")

@@ -16,7 +16,7 @@ import tempfile
 import shutil
 
 log_file = '/tmp/note-link-objective.log'
-log_echo_stdout = True
+log_echo_stdout = False
 
 def log_any(s, status, verbose_level):
     from datetime import datetime as dtdt
@@ -328,26 +328,31 @@ def link_objective(source_filename_lineno, sink_filename_lineno, ttm_timedate, c
         new_sink_item_pinned_to = last_nontask_lineno_ref[1]
     
     if new_sink_item_pinned_to is None:
-        # We haven't found an appropriate reference to pin to, so place it somewhere before the next task
-        # This is more appropriate by the convention that citations and new logs in general
-        #   tend to come last in the task notelogs.
-        valid, next_task_lineno, next_task_item = _process_next_task(sink_lineno_n, sink_parsed_items)
-        if valid:
-            log_warn('Could not find an appropriate place to pin new content. pinning before new task.')
-            pin_before = True
-            new_sink_item_pinned_to = next_task_item
-            new_sink_item_lineno_pinned_to = next_task_lineno
-
-            extra_tab = _compute_tab_level(next_task_item)
-
-    if new_sink_item_pinned_to is None:
-        # There isn't even a next task to pin it before... Just put it immediately after the task. 
+        # Putting this at higher priority rather than adding before the next task.
+        # This is just clearer, I find, then searching for the citation in between user defined
+        # notelogs just before the last task
         log_warn('Could not find an appropriate place to pin new content. Putting right after task.')
         pin_before = False
         new_sink_item_pinned_to = cur_sink_item
         new_sink_item_lineno_pinned_to = sink_lineno
+        log_debug(f'new_sink_item_pinned_to: {new_sink_item_pinned_to}')
+        log_debug(f'new_sink_item_lineno_pinned_to: {new_sink_item_lineno_pinned_to}')
+        log_debug(f'type(new_sink_item_lineno_pinned_to): {type(new_sink_item_lineno_pinned_to)}')
         extra_tab = _compute_tab_level(cur_sink_item)
-    
+
+    # if new_sink_item_pinned_to is None:
+    #     # We haven't found an appropriate reference to pin to, so place it somewhere before the next task
+    #     # This is more appropriate by the convention that citations and new logs in general
+    #     #   tend to come last in the task notelogs.
+    #     valid, next_task_lineno, next_task_item = _process_next_task(sink_lineno_n, sink_parsed_items)
+    #     if valid:
+    #         log_warn('Could not find an appropriate place to pin new content. pinning before new task.')
+    #         pin_before = True
+    #         new_sink_item_pinned_to = next_task_item
+    #         new_sink_item_lineno_pinned_to = next_task_lineno
+
+    #         extra_tab = _compute_tab_level(next_task_item)
+
     if new_sink_item_pinned_to is None:
         log_error('Failed to find a spot to place new reference')
         return
@@ -393,7 +398,8 @@ def link_objective(source_filename_lineno, sink_filename_lineno, ttm_timedate, c
         lineno = 0
         for line in fileinput.input(sink_filename, inplace=True):
             lineno += 1
-            if lineno == new_sink_item_lineno_pinned_to:
+            if lineno == new_sink_item_lineno_pinned_to or \
+               str(lineno) == new_sink_item_lineno_pinned_to:
                 err_msg, new_line = cb_ref_builder(cur_source_item, source_uuid, new_sink_item_pinned_to, last_number, ttm_timedate)
                 if err_msg != 'OK':
                     raise Exception(f'Could not process file modifications: {err_msg}')
@@ -418,8 +424,8 @@ def link_objective(source_filename_lineno, sink_filename_lineno, ttm_timedate, c
 
 
 def main(args: argparse.Namespace):
-    # log_debug(f'===========================================================')
-    # log_debug(f'Running App {args}')
+    log_debug(f'===========================================================')
+    log_debug(f'Running App {args}')
 
     if args.subcommand == 'link-task':
         link_objective(args.source_filename_lineno, args.sink_filename_lineno, args.ttm_timedate, 

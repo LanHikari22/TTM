@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Preprocess the entries and save to a temporary file
-python3 /root/.local/bin/tmlib.notes-citations-processor.py "$(pwd)" group-task-notelog $@ \
+python3 /root/.local/bin/tmlib.notes-citations-processor.py "$(pwd)" $@ \
   | awk 'BEGIN{RS="/ENTRY"; ORS="\0"} {gsub(/\n/, "\\n"); print}' > /tmp/preprocessed_entries.txt
 
 # Run fzf with the preprocessed entries

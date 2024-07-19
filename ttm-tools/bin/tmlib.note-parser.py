@@ -662,10 +662,19 @@ class Item:
             codes = []
             ns = []
 
-
             # Go through each code and separate into category and number or '' if no number
             for code in groups:
                 if code == None or code == '':
+                    continue
+
+                # first try to parse variable names for n, if it is not valid, we parse with/without nums
+                part_regex = r'[a-zA-Z]*#.+'
+                part_regex_grp = r'([a-zA-Z]*)#(.+)'
+                ec, whole_str, groups = cls.parse_whole_and_groups(code, part_regex, part_regex_grp)
+                valid = ec
+                if ec == 0:
+                    codes.append(groups[0])
+                    ns.append('#' + groups[1])
                     continue
 
                 part_regex = r'[a-zA-Z]*[\d.]+'
@@ -826,6 +835,20 @@ def find_parent_item(parsed_items: List[Tuple[int, Item]], lineno: int) -> Optio
                 current_tab_level = len(item.get_part(ItemType.TAB_LEVEL).value)
                 start_looking_for_parent = True
     return None
+
+def find_parent_branch_items(parsed_items: List[Tuple[int, Item]], lineno: int) -> Optional[List[Tuple[int, Item]]]:
+    branch = []
+
+    while True:
+        opt_lineno_item = find_parent_item(parsed_items, lineno)
+        if opt_lineno_item:
+            branch.append((opt_lineno_item[0], opt_lineno_item[1]))
+            lineno = opt_lineno_item[0]
+        else:
+            break
+    
+    return branch
+
 
 def get_tag(item: Item, key) -> str:
     tags = item.get_part(ItemType.TAGS)
@@ -1172,6 +1195,9 @@ class UnitTests(unittest.TestCase):
             '[^PRJ::T2]',
             '[^P::GH1::GHI1]',
             '[^TL3.5]',
+            '[^FL#variable_name]',
+            '[^FL#file55]',
+
             '[^TL3..5]',            # False example
         ]
 
@@ -1209,6 +1235,14 @@ class UnitTests(unittest.TestCase):
             if test_line == '[^TL3.5]':
                 self.assertEqual(get_kv(item, 'code'), 'TL')
                 self.assertEqual(get_kv(item, 'n'), '3.5')
+
+            if test_line == '[^FL#variable_name]':
+                self.assertEqual(get_kv(item, 'code'), 'FL')
+                self.assertEqual(get_kv(item, 'n'), '#variable_name')
+
+            if test_line == '[^FL#file55]':
+                self.assertEqual(get_kv(item, 'code'), 'FL')
+                self.assertEqual(get_kv(item, 'n'), '#file55')
             
             # False Examples
             if test_line == '[^TL3..5]':
@@ -1225,6 +1259,7 @@ class UnitTests(unittest.TestCase):
                     '                                                 (!) /T::solved_by/',
             'G0.5': '                - 240701-W27R 19:58 - [^T1]: /T::is_self/ TaskGraph::MSTN: Able to render graph representation of tasks/citations\n' +
                     '                                             (-) /T::blocks(milestone)/',
+            'G0.6': '- 240715-W29T 16:21 - [^FL#ntp_src]: WSL, $HOME/src/ttm/ttm-tools/bin/tmlib.note-parser.py',
 
             # False non-parsing examples
             'NP1': '- 240701-W27S 18:45 - With help of [^GT1]:',
@@ -1429,6 +1464,32 @@ class UnitTests(unittest.TestCase):
                 self.assertEqual(get_kv(relations[1], 'relation'), 'blocks(milestone)')
                 self.assertEqual(get_kv(relations[1], 'is_from'), 'True')
                 self.assertEqual(get_kv(relations[1], 'status'), '-')
+
+            # 'G0.6': '- 240715-W29T 16:21 - [^FL#ntp_src]: WSL, $HOME/src/ttm/ttm-tools/bin/tmlib.note-parser.py',
+            if test_no == 'G0.6':
+                tab_level = item.get_part(ItemType.TAB_LEVEL).value
+                self.assertEqual(tab_level, '')
+
+                time_date = item.get_part(ItemType.TIME_DATE)
+                self.assertEqual(time_date.value, '240715-W29T 16:21')
+                self.assertEqual(get_kv(time_date, 'date_code'), '240715')
+                self.assertEqual(get_kv(time_date, 'week_num'), '29')
+                self.assertEqual(get_kv(time_date, 'MTWRFSU'), 'T')
+                self.assertEqual(get_kv(time_date, 'HH'), '16')
+                self.assertEqual(get_kv(time_date, 'MM'), '21')
+
+                cite_code = item.get_part(ItemType.CITE_CODE)
+                self.assertEqual(get_kv(cite_code, 'code'), 'FL')
+                self.assertEqual(get_kv(cite_code, 'n'), '#ntp_src')
+
+                self.assertEqual(get_kv(item, 'uuid'), None)
+
+                desc = get_kv(item, 'desc')
+                self.assertTrue(desc.startswith('WSL, '))
+                self.assertTrue(desc.endswith('parser.py'))
+
+                relations = item.get_part(ItemType.CITE_RELATION)
+                self.assertEqual(relations, None)
 
         pass
 
