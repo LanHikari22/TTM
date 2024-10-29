@@ -81,9 +81,6 @@ function! CreateNoteLog()
     call append(line('.'), split(todo_log, '\n'))
 endfunction
 
-autocmd BufRead,BufNewFile ~/.task/schedule/events.csv colorscheme calcure_colors
-autocmd BufRead,BufNewFile ~/.task/schedule/events_ann colorscheme calcure_colors
-
 " Function to set the filetype if LOG_START token is present
 function! SetCustomLogFileType()
     if expand('%:t') == '.vimrc'
@@ -98,9 +95,6 @@ function! SetCustomLogFileType()
       set filetype=custom_log
     endif
 endfunction
-
-autocmd FileType custom_log colorscheme custom_log
-autocmd BufRead,BufNewFile * call SetCustomLogFileType()
 
 
 "" -- Registering objectives from notes --
@@ -246,3 +240,16 @@ function! CalcureAddEvent()
   execute '!python3 ~/.local/bin/tmlib.notes-add-event.py' shellescape(l:current_file) l:current_line
 endfunction
 
+function! EventsAddExpected()
+  let l:current_line = line('.')
+  let l:current_file = expand('%:p')
+  echo "Current File: " . l:current_file . " | Line Number: " . l:current_line
+  execute '!python3 ~/.local/bin/tmlib.notes-add-expected-event.py' shellescape(l:current_file) l:current_line
+endfunction
+
+autocmd FileType custom_log colorscheme custom_log
+autocmd BufRead,BufNewFile * call SetCustomLogFileType()
+
+autocmd BufRead,BufNewFile ~/.task/schedule/events.csv colorscheme calcure_colors
+autocmd BufRead,BufNewFile ~/.task/schedule/events_ann colorscheme calcure_colors
+autocmd BufRead,BufNewFile ~/.task/schedule/expected.csv colorscheme colorscheme_expected

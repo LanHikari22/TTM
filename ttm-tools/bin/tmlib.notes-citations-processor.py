@@ -15,13 +15,18 @@ import argparse
 import pandas as pd
 from datetime import datetime as dtdt
 
-spec=importlib.util.spec_from_file_location("note_parser","/root/.local/bin/tmlib.note-parser.py")
-note_parser = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(note_parser)
+try:
+    spec=importlib.util.spec_from_file_location("note_parser","/root/.local/bin/tmlib.note-parser.py")
+    note_parser = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(note_parser)
+except Exception:
+    spec=importlib.util.spec_from_file_location("note_parser","tmlib.note-parser.py")
+    note_parser = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(note_parser)
+
 ntp = note_parser
 
 log_file = '/tmp/citations-processor.log'
-
 
 def log_any(s, status, verbose_level):
     if g_args.verbose < verbose_level:
@@ -212,14 +217,21 @@ def process_task_notelog_ref_entries_for_file(filename: str, clustered=False):
             
             # Search the user notelogs for presence of this cite_code
             if not clustered:
+                found = False
                 for note_lineno, note_item in task_notes_grouped[i_grp]:
                     note_desc = ntp.get_kv(note_item, 'desc')
 
                     if cite_code.value in note_desc:
+                        found = True
                         print(filename + ':' + str(note_lineno) + ':' + task_item.value.strip())
                         print(filename + ':' + str(note_lineno) + ':' + ref_item.value.strip())
                         print(filename + ':' + str(note_lineno) + ':' + _format_note_desc(note_item))
                         print('/ENTRY')
+                
+                if not found:
+                    print(filename + ':' + str(ref_lineno) + ':' + task_item.value.strip())
+                    print(filename + ':' + str(ref_lineno) + ':' + ref_item.value.strip())
+                    print('/ENTRY')
                 
             else:
                 # This is clustered by notelog
@@ -230,12 +242,12 @@ def process_task_notelog_ref_entries_for_file(filename: str, clustered=False):
                     if cite_code.value in note_desc:
                         notelogs.append(filename + ':' + str(ref_lineno) + ':' + _format_note_desc(note_item))
                 
-                if len(notelogs) != 0:
-                    print(filename + ':' + str(ref_lineno) + ':' + task_item.value.strip())
-                    print(filename + ':' + str(ref_lineno) + ':' + ref_item.value.strip())
+                print(filename + ':' + str(ref_lineno) + ':' + task_item.value.strip())
+                print(filename + ':' + str(ref_lineno) + ':' + ref_item.value.strip())
+                if len(notelogs) != 0: # This was here before, because we only printed the task/ref if notelogs are found.
                     for notelog in notelogs:
                         print(notelog)
-                    print('/ENTRY')
+                print('/ENTRY')
 
         # Now let's process the non-obvious cases. notelogs can refer to citations from the parent branch!
         task_branch = ntp.find_parent_branch_items(task_parsed_items, task_lineno)

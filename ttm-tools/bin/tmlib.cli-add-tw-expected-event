@@ -1,0 +1,60 @@
+#!/bin/bash
+
+uuid=$1
+
+log_module='tmlib.cli-add-tw-expected-event'
+log_info_active=1
+log_debug_active=1
+log_trace_active=0
+source lib-tm-common
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}"  )" &> /dev/null && pwd )
+EVENTS_CSV="$HOME/.task/schedule/expected.csv"
+
+# Extract date from schedule to parse. Schend field is only used for same day intervals for now. If not set, assume until EOD.
+scheduled=$(task _get $uuid.scheduled)
+until_t=$(task _get $uuid.endsch)
+log_trace "scheduled: " $scheduled
+log_trace "until_t: " $until_t
+
+# Parse scheduled day and start-end intervals
+scheduled_day=$(date -d"$scheduled" +%Y-%m-%d)
+scheduled_hhmm=$(date -d"$scheduled" +%H%M)
+until_hhmm=$(date -d"$until_t" +%H%M)
+log_trace "scheduled_day: $scheduled_day"
+log_trace "scheduled_hhmm: $scheduled_hhmm"
+log_trace "until_hhmm: $until_hhmm"
+
+# We can't know if this is the default, or if the user should specify something.
+if [ $scheduled_hhmm == '0000' ]; then
+  scheduled_hhmm='XXXX'
+fi
+
+if [ $until_hhmm == '0000' ]; then
+  until_hhmm='XXXX'
+fi
+
+
+gcode=$(task _get $uuid.gcode)
+proj=$(task _get $uuid.project)
+desc=$(task _get $uuid.description)
+etag=$(task _get $uuid.etag)
+
+if [[ $etag == '' ]]; then
+  etag=$(echo EVNT)
+fi
+
+# Add the event to the event file with a dummy row id
+scheduled_year=$(date -d"$scheduled" +%Y)
+scheduled_month=$(date -d"$scheduled" +%m)
+scheduled_day=$(date -d"$scheduled" +%d)
+week_string=$(date +W%V%a | sed 's/Mon/M/; s/Tue/T/; s/Wed/W/; s/Thu/R/; s/Fri/F/; s/Sat/S/; s/Sun/U/')
+event_csv=$(echo INIT,$scheduled_year,$scheduled_month,$scheduled_day,$week_string,$scheduled_hhmm:$until_hhmm,1D,CL0,$etag,NEED,$gcode,$uuid,$proj,$desc)
+log_trace "event_csv: $event_csv"
+echo $event_csv >> $EVENTS_CSV
+
+# Sort events, fixing dummy row id also
+# reorder events
+# python3 "$SCRIPT_DIR/tmlib.calcure-update.py" "$EVENTS_CSV" 'reorder-events'
+# script_status=$?
+# echo re-order events status: $script_status
