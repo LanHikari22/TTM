@@ -150,7 +150,7 @@ def build_normal_task_link_ref_line(item, uuid, pinned_item, opt_last_number, tt
     return ('OK', result)
 
 
-def build_has_milestone_link_ref_line(item, uuid, pinned_item, opt_last_number, ttm_timedate):
+def build_has_goal_link_ref_line(item, uuid, pinned_item, opt_last_number, ttm_timedate):
     if not opt_last_number:
         last_number = 1
     else:
@@ -164,12 +164,12 @@ def build_has_milestone_link_ref_line(item, uuid, pinned_item, opt_last_number, 
 
     desc = ntp.get_kv(item, 'desc')
 
-    result = f'{tab_level}- {ttm_timedate} - [^T{last_number}]: /T::has_milestone/ {desc} #{uuid}'
+    result = f'{tab_level}- {ttm_timedate} - [^T{last_number}]: /T::has_goal/ {desc} #{uuid}'
  
     return ('OK', result)
 
 
-def build_milestone_of_link_ref_line(item, uuid, pinned_item, opt_last_number, ttm_timedate):
+def build_goal_of_link_ref_line(item, uuid, pinned_item, opt_last_number, ttm_timedate):
     if not opt_last_number:
         last_number = 1
     else:
@@ -182,7 +182,7 @@ def build_milestone_of_link_ref_line(item, uuid, pinned_item, opt_last_number, t
 
     desc = ntp.get_kv(item, 'desc')
 
-    result = f'{tab_level}- {ttm_timedate} - [^T{last_number}]: (-) /T::milestone_of/ {desc} #{uuid}'
+    result = f'{tab_level}- {ttm_timedate} - [^T{last_number}]: (-) /T::goal_of/ {desc} #{uuid}'
 
     return ('OK', result)
 
@@ -430,12 +430,12 @@ def main(args: argparse.Namespace):
     if args.subcommand == 'link-task':
         link_objective(args.source_filename_lineno, args.sink_filename_lineno, args.ttm_timedate, 
                        build_normal_task_link_ref_line)
-    if args.subcommand == 'link-milestone-of':
+    if args.subcommand == 'link-goal-of':
         link_objective(args.sink_filename_lineno, args.source_filename_lineno, args.ttm_timedate, 
-                       build_milestone_of_link_ref_line)
-    if args.subcommand == 'link-has-milestone':
+                       build_goal_of_link_ref_line)
+    if args.subcommand == 'link-has-goal':
         link_objective(args.source_filename_lineno, args.sink_filename_lineno, args.ttm_timedate, 
-                       build_has_milestone_link_ref_line)
+                       build_has_goal_link_ref_line)
 
 
 def cmdline_args():
@@ -461,14 +461,14 @@ def cmdline_args():
     sp = subparsers.add_parser('link-task', 
                     help='Creates a link from source to sink task')
 
-    sp = subparsers.add_parser('link-milestone-of', 
+    sp = subparsers.add_parser('link-goal-of', 
                     help='')
 
-    sp = subparsers.add_parser('link-has-milestone', 
-                    help='Creates a has-milestone reference in sink')
+    sp = subparsers.add_parser('link-has-goal', 
+                    help='Creates a has-goal reference in sink')
 
-    sp = subparsers.add_parser('link-milestone-of', 
-                    help='Creates a milestone-of reference in source')
+    sp = subparsers.add_parser('link-goal-of', 
+                    help='Creates a goal-of reference in source')
 
     return(p.parse_args())
 

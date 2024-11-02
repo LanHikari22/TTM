@@ -149,7 +149,7 @@ function! LinkObjective()
   execute '!python3 ~/.local/bin/tmlib.notes-link-objective.py' . ' ' . shellescape(l:ttm_timedate) . ' ' . shellescape(l:source_filename_lineno) . ' ' . shellescape(l:sink_filename_lineno) . ' link-task'
 endfunction
 
-function! LinkMilestone()
+function! LinkGoal()
   " Get the current line number and file path
   let l:current_line = line('.')
   let l:current_file = expand('%:p')
@@ -181,8 +181,8 @@ function! LinkMilestone()
   echo "Source File: " . l:source_filename . " | Line Number: " . l:source_lineno
   echo "Sink File: " . l:current_file . " | Line Number: " . l:current_line
   
-  " Link the sink first (has-milestone), since it can cause a search change for source.
-  execute '!python3 ~/.local/bin/tmlib.notes-link-objective.py' . ' ' . shellescape(l:ttm_timedate) . ' ' . shellescape(l:source_filename_lineno) . ' ' . shellescape(l:sink_filename_lineno) . ' link-has-milestone'
+  " Link the sink first (has-goal), since it can cause a search change for source.
+  execute '!python3 ~/.local/bin/tmlib.notes-link-objective.py' . ' ' . shellescape(l:ttm_timedate) . ' ' . shellescape(l:source_filename_lineno) . ' ' . shellescape(l:sink_filename_lineno) . ' link-has-goal'
 
   " Now the file content could have changed, so search again.
 
@@ -197,8 +197,8 @@ function! LinkMilestone()
   echo "Source File: " . l:source_filename . " | Line Number: " . l:source_lineno
   echo "Sink File: " . l:current_file . " | Line Number: " . l:current_line
 
-  " Link milestone-of
-  execute '!python3 ~/.local/bin/tmlib.notes-link-objective.py' . ' ' . shellescape(l:ttm_timedate) . ' ' . shellescape(l:source_filename_lineno) . ' ' . shellescape(l:sink_filename_lineno) . ' link-milestone-of'
+  " Link goal-of
+  execute '!python3 ~/.local/bin/tmlib.notes-link-objective.py' . ' ' . shellescape(l:ttm_timedate) . ' ' . shellescape(l:source_filename_lineno) . ' ' . shellescape(l:sink_filename_lineno) . ' link-goal-of'
 endfunction
 
 function! TargetObjective()
@@ -246,6 +246,15 @@ function! EventsAddExpected()
   echo "Current File: " . l:current_file . " | Line Number: " . l:current_line
   execute '!python3 ~/.local/bin/tmlib.notes-add-expected-event.py' shellescape(l:current_file) l:current_line
 endfunction
+
+function! GotoUuidWithTmux()
+  let l:current_line = line('.')
+  let l:current_file = expand('%:p')
+  echo "Current File: " . l:current_file . " | Line Number: " . l:current_line
+  # execute '!python3 ~/.local/bin/tmlib.cli-goto-uuid.py' shellescape(l:current_file) l:current_line
+  execute '!python3 ~/.local/bin/tmlib.cli-goto-uuid.py' shellescape(l:current_file) l:current_line
+endfunction
+
 
 autocmd FileType custom_log colorscheme custom_log
 autocmd BufRead,BufNewFile * call SetCustomLogFileType()

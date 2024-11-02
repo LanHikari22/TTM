@@ -1,5 +1,6 @@
 #!/bin/python3
 
+import os
 import sys
 import subprocess
 import re
@@ -20,48 +21,16 @@ reg_objective = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(reg_objective)
 rgo = reg_objective
 
-prn_error = print
+prn_err = print
 prn_warn = print
 prn_info = print
 
 
-def system_calcure_add_event(uuid) -> bool:
-    result = subprocess.run(['tmlib.cli-calcure-add-tw-event', uuid], stdout=subprocess.PIPE)
+def system_goto_uuid(uuid) -> bool:
+    # os.system(f'tmlib.cli-goto-uuid {uuid}')
+    result = subprocess.run(['tmlib.cli-goto-uuid', uuid], stdout=subprocess.PIPE)
     if result.returncode != 0:
         prn_error(f'error: Failed to add calcure event')
-        return False
-
-    return True
-
-
-def get_rounded_time_now():
-    from datetime import datetime
-    import math
-
-    now = datetime.now()
-    rounded_minutes = math.ceil(now.minute / 5) * 5
-    hour = now.hour
-
-    # Adjust for any rounding that pushes to the next hour
-    if rounded_minutes == 60:
-        rounded_minutes = 0
-        hour = (hour + 1) % 24
-
-    return hour, rounded_minutes
-
-
-def system_set_schedule_event_to_today(uuid) -> bool:
-    # When adding an event, let's just assume it's added for now. Rounded to 5 minutes.
-    hh, mm = get_rounded_time_now()
-
-    result = subprocess.run(['task', 'modify', f'{uuid}', f'sch:today+{hh}h+{mm}min'], stdout=subprocess.PIPE)
-    if result.returncode != 0:
-        prn_error(f'error: Failed to modify sch for {uuid}')
-        return False
-
-    result = subprocess.run(['task', 'modify', f'{uuid}', f'endsch:today'], stdout=subprocess.PIPE)
-    if result.returncode != 0:
-        prn_error(f'error: Failed to modify endsch for {uuid}')
         return False
 
     return True
@@ -87,6 +56,7 @@ def get_uuid_from_expected_csv(filename: str, lineno: int) -> Optional[str]:
             raise Exception(f'line does not match expected format: {line}')
 
         return tokens[expected_fields.index('uuid')]
+
 
 
 def get_uuid_from_events_csv(filename: str, lineno: int) -> Optional[str]:
@@ -116,32 +86,28 @@ def get_uuid_from_events_csv(filename: str, lineno: int) -> Optional[str]:
         return tokens[expected_desc_fields.index('uuid')]
 
 
-def add_event(filename, lineno) -> str:
+def process(filename, lineno) -> str:
     if 'expected.csv' in filename:
         cur_item_uuid = get_uuid_from_expected_csv(filename, lineno)
     elif 'events.csv' in filename:
         cur_item_uuid = get_uuid_from_events_csv(filename, lineno)
     else:
         # Assume this is a notelog file format
-        parsed_items = ntp.process_note_file(filename)
+        parsed_items = ntp.process_note_file(filename, incl_refs=True)
         cur_item = ntp.find_item_at_lineno(parsed_items, lineno)
+        print('ITEM', cur_item)
 
-        # Get Item UUID and Register if necessary
-        cur_item_uuid = ntp.get_tag(cur_item, 'uuid')
+        # Get Item UUID 
+        cur_item_uuid = ntp.get_kv(cur_item, 'uuid')
         if cur_item_uuid == '':
-            # We need to register this item first.
-            prn_info(f'item at lineno {lineno} is not registered. Registering...')
-            cur_item_uuid = rgo.register_objective(filename, lineno)
-        if cur_item_uuid == '':
-            prn_error(f'error: Could not register item')
-            return ''
+            prn_err(f'Could not find uuid tag for {cur_item_uuid}')
+            exit(1)
 
-    system_set_schedule_event_to_today(cur_item_uuid)
-    system_calcure_add_event(cur_item_uuid)
+    system_goto_uuid(cur_item_uuid)
 
     return cur_item_uuid
 
 if __name__ == '__main__':
     filename = sys.argv[1]
     lineno = int(sys.argv[2])
-    add_event(filename, lineno)
+    process(filename, lineno)

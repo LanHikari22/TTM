@@ -45,19 +45,76 @@ def system_set_schedule_event_to_today(uuid) -> bool:
 
     return True
 
-def add_event(filename, lineno) -> str:
-    parsed_items = ntp.process_note_file(filename)
-    cur_item = ntp.find_item_at_lineno(parsed_items, lineno)
 
-    # Get Item UUID and Register if necessary
-    cur_item_uuid = ntp.get_tag(cur_item, 'uuid')
-    if cur_item_uuid == '':
-        # We need to register this item first.
-        prn_info(f'item at lineno {lineno} is not registered. Registering...')
-        cur_item_uuid = rgo.register_objective(filename, lineno)
-    if cur_item_uuid == '':
-        prn_error(f'error: Could not register item')
-        return ''
+def get_uuid_from_expected_csv(filename: str, lineno: int) -> Optional[str]:
+    with open(filename, 'r') as fr:
+        lines = fr.readlines()
+
+    for i, line in enumerate(lines):
+        if lineno != i+1:
+            continue
+        
+        # Don't care about tabbing or anything for this
+        line = line.strip()
+
+        expected_fields = ['status', 'yyyy', 'mm', 'dd', 'weekcode', 'interval', 'scope', 'color', 'type', 'priority', 
+                           'gcode', 'uuid', 'proj', 'desc']
+
+        tokens = line.split(',')
+
+        if len(tokens) < len(expected_fields):
+            raise Exception(f'line does not match expected format: {line}')
+
+        return tokens[expected_fields.index('uuid')]
+
+
+def get_uuid_from_events_csv(filename: str, lineno: int) -> Optional[str]:
+    with open(filename, 'r') as fr:
+        lines = fr.readlines()
+
+    for i, line in enumerate(lines):
+        if lineno != i+1:
+            continue
+        
+        # Don't care about tabbing or anything for this
+        line = line.strip()
+
+        expected_fields = ['id', 'yyyy', 'mm', 'dd', 'desc', 'repeat', 'repeat1', 'status']
+        expected_desc_fields = ['interval', 'type', 'gcode', 'uuid', 'proj', 'desc']
+
+        tokens = line.split(',')
+
+        if len(tokens) < len(expected_fields):
+            raise Exception(f'line does not match expected format: {line}')
+
+        tokens = tokens[expected_fields.index('desc')].split(' ')
+
+        if len(tokens) < len(expected_desc_fields):
+            raise Exception(f'line does not match expected format for desc: {line}')
+
+        return tokens[expected_desc_fields.index('uuid')]
+
+
+
+def add_event(filename, lineno) -> str:
+    if 'expected.csv' in filename:
+        cur_item_uuid = get_uuid_from_expected_csv(filename, lineno)
+    elif 'events.csv' in filename:
+        cur_item_uuid = get_uuid_from_events_csv(filename, lineno)
+    else:
+        # Assume this is a notelog file format
+        parsed_items = ntp.process_note_file(filename)
+        cur_item = ntp.find_item_at_lineno(parsed_items, lineno)
+
+        # Get Item UUID and Register if necessary
+        cur_item_uuid = ntp.get_tag(cur_item, 'uuid')
+        if cur_item_uuid == '':
+            # We need to register this item first.
+            prn_info(f'item at lineno {lineno} is not registered. Registering...')
+            cur_item_uuid = rgo.register_objective(filename, lineno)
+        if cur_item_uuid == '':
+            prn_error(f'error: Could not register item')
+            return ''
 
     system_set_schedule_event_to_today(cur_item_uuid)
     system_add_expected_event(cur_item_uuid)

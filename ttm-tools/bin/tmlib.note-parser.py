@@ -1096,11 +1096,11 @@ class UnitTests(unittest.TestCase):
         test_lines_dict = {
             # G0: Group of passing examples that are simple, ie the entire input is the item value
             'G0.0': '/T::cites/',
-            'G0.1': '/T::milestone_of/',
+            'G0.1': '/T::goal_of/',
             'G0.2': '(-) /T::blocks/',
             'G0.3': '(!) /T::blocks/',
             'G0.4': '/[^ATH1]::author_of/',
-            'G0.5': '\\has_milestone::T\\',
+            'G0.5': '\\has_goal::T\\',
 
             # G1: Group of passing examples that aren't simple, ie only part of the input is the item value
             'G1.0': '/T::is_self/ AAA BBB CCC/DDD',
@@ -1132,9 +1132,9 @@ class UnitTests(unittest.TestCase):
                 self.assertEqual(get_kv(item, 'is_from'), 'True')
                 self.assertEqual(get_kv(item, 'status'), None)
 
-            if test_line == '/T::milestone_of/':
+            if test_line == '/T::goal_of/':
                 self.assertEqual(get_kv(item, 'node'), 'T')
-                self.assertEqual(get_kv(item, 'relation'), 'milestone_of')
+                self.assertEqual(get_kv(item, 'relation'), 'goal_of')
                 self.assertEqual(get_kv(item, 'is_from'), 'True')
                 self.assertEqual(get_kv(item, 'status'), None)
 
@@ -1156,9 +1156,9 @@ class UnitTests(unittest.TestCase):
                 self.assertEqual(get_kv(item, 'is_from'), 'True')
                 self.assertEqual(get_kv(item, 'status'), None)
 
-            if test_line == '\\has_milestone::T\\':
+            if test_line == '\\has_goal::T\\':
                 self.assertEqual(get_kv(item, 'node'), 'T')
-                self.assertEqual(get_kv(item, 'relation'), 'has_milestone')
+                self.assertEqual(get_kv(item, 'relation'), 'has_goal')
                 self.assertEqual(get_kv(item, 'is_from'), 'False')
                 self.assertEqual(get_kv(item, 'status'), None)
 
@@ -1254,11 +1254,11 @@ class UnitTests(unittest.TestCase):
             'G0.0': '- 240701-W27T 21:52 - [^T1]: Update Task-Notelog solution to work with argparse interface #548991db',
             'G0.1': '   - 240708-W28M 06:57 - [^CMT1]: 5ff942c (HEAD -> main) feat[TaskGraph]: Added ArgParse and Clustered multiline grep',
             'G0.2': '- 240701-W27S 18:31 - [^FL2.1]: WSL, $HOME/src/ttm/ttm-tools/bin/tmlib.notes-citations-processor.py',
-            'G0.3': '   - 240701-W27M 09:02 - [^T5]: (-) /T::milestone_of/ TaskGraph: Impl parsing for Citation Notelog #e142cb79',
+            'G0.3': '   - 240701-W27M 09:02 - [^T5]: (-) /T::goal_of/ TaskGraph: Impl parsing for Citation Notelog #e142cb79',
             'G0.4': '                    - 240701-W27M 04:47 - [^T1]: /T::spawned_by/    TaskGraph: Extend tmlib.note-parser to account for multiline log lines\n' +
                     '                                                 (!) /T::solved_by/',
             'G0.5': '                - 240701-W27R 19:58 - [^T1]: /T::is_self/ TaskGraph::MSTN: Able to render graph representation of tasks/citations\n' +
-                    '                                             (-) /T::blocks(milestone)/',
+                    '                                             (-) /T::blocks(goal)/',
             'G0.6': '- 240715-W29T 16:21 - [^FL#ntp_src]: WSL, $HOME/src/ttm/ttm-tools/bin/tmlib.note-parser.py',
 
             # False non-parsing examples
@@ -1363,7 +1363,7 @@ class UnitTests(unittest.TestCase):
                 relations = item.get_part(ItemType.CITE_RELATION)
                 self.assertEqual(relations, None)
 
-            # 'G0.3': '   - 240701-W27M 09:02 - [^T5]: (-) /T::milestone_of/ TaskGraph: Impl parsing for Citation Notelog #e142cb79',
+            # 'G0.3': '   - 240701-W27M 09:02 - [^T5]: (-) /T::goal_of/ TaskGraph: Impl parsing for Citation Notelog #e142cb79',
             if test_no == 'G0.3':
                 tab_level = item.get_part(ItemType.TAB_LEVEL).value
                 self.assertEqual(tab_level, '   ')
@@ -1388,7 +1388,7 @@ class UnitTests(unittest.TestCase):
 
                 relations = item.get_part(ItemType.CITE_RELATION)
                 self.assertEqual(get_kv(relations, 'node'), 'T')
-                self.assertEqual(get_kv(relations, 'relation'), 'milestone_of')
+                self.assertEqual(get_kv(relations, 'relation'), 'goal_of')
                 self.assertEqual(get_kv(relations, 'is_from'), 'True')
                 self.assertEqual(get_kv(relations, 'status'), '-')
         
@@ -1430,7 +1430,7 @@ class UnitTests(unittest.TestCase):
                 self.assertEqual(get_kv(relations[1], 'status'), '!')
 
             # 'G0.5': '                - 240701-W27R 19:58 - [^T1]: /T::is_self/ TaskGraph::MSTN: Able to render graph representation of tasks/citations\n' +
-            #         '                                             (-) /T::blocks(milestone)/',
+            #         '                                             (-) /T::blocks(goal)/',
             if test_no == 'G0.5':
                 tab_level = item.get_part(ItemType.TAB_LEVEL).value
                 self.assertEqual(tab_level, '                ')
@@ -1461,7 +1461,7 @@ class UnitTests(unittest.TestCase):
                 self.assertEqual(get_kv(relations[0], 'is_from'), 'True')
                 self.assertEqual(get_kv(relations[0], 'status'), None)
                 self.assertEqual(get_kv(relations[1], 'node'), 'T')
-                self.assertEqual(get_kv(relations[1], 'relation'), 'blocks(milestone)')
+                self.assertEqual(get_kv(relations[1], 'relation'), 'blocks(goal)')
                 self.assertEqual(get_kv(relations[1], 'is_from'), 'True')
                 self.assertEqual(get_kv(relations[1], 'status'), '-')
 

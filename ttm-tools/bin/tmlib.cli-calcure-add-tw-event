@@ -4,7 +4,7 @@ uuid=$1
 
 log_module='tmlib.cli-calcure-add-tw-event'
 log_info_active=1
-log_debug_active=1
+log_debug_active=0
 log_trace_active=0
 source lib-tm-common
 
@@ -45,7 +45,7 @@ scheduled_year=$(date -d"$scheduled" +%Y)
 scheduled_month=$(date -d"$scheduled" +%-m)
 scheduled_day=$(date -d"$scheduled" +%-d)
 desc_csv=$(echo $scheduled_hhmm:$until_hhmm $etag $gcode $uuid $proj $desc | cut -c-101)
-event_csv=$(echo 0,$scheduled_year,$scheduled_month,$scheduled_day,\"$desc_csv\",1,once,normal)
+event_csv=$(echo 0,$scheduled_year,$scheduled_month,$scheduled_day,\"$desc_csv\",1,once,important)
 log_trace "event_csv: $event_csv"
 echo $event_csv >> $EVENTS_CSV
 

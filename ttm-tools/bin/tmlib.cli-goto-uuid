@@ -1,0 +1,58 @@
+#!/bin/bash
+# This script simplifies the process to go to a UUID. Preferably used from a vim interface. To be used with tmux.
+# It allows one to go to a UUID entry from an actual event, an expected event, and a reference.
+
+uuid=$1
+
+log_module='tmlib.cli-calcure-add-tw-event'
+log_info_active=1
+log_debug_active=0
+log_trace_active=0
+source lib-tm-common
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}"  )" &> /dev/null && pwd )
+EVENTS_CSV="$HOME/.task/schedule/events.csv"
+
+
+# Ensure script is running in tmux
+if [ -z "$TMUX" ]; then
+    echo "This script must be run inside a tmux session."
+      exit 1
+fi
+
+NOTES_PANE="notes.1"  
+
+function is_vim_active_in_notes_pane() {
+  tmux display-message -p -t $NOTES_PANE | cut -d' ' -f2 | cut -d':' -f2 | cut -d',' -f1 | grep -qi "vim"
+}
+
+function vim_search_uuid() {
+  tmux send-keys -t $NOTES_PANE ":vimgrep /tags:.* #$uuid/ **" Enter
+  tmux send-keys -t $NOTES_PANE "zz"
+}
+
+function clear_notes_pane() {
+  tmux send-keys -t $NOTES_PANE C-c && \
+    tmux send-keys -t $NOTES_PANE "reset" Enter && \
+    tmux send-keys -t $NOTES_PANE "clear" Enter
+}
+
+
+if ! tmux select-pane -t "$NOTES_PANE"; then
+  echo "could not find pane $NOTES_PANE"
+  exit
+fi
+
+tmux switch -t $NOTES_PANE
+
+
+if is_vim_active_in_notes_pane; then
+  vim_search_uuid
+else
+  clear_notes_pane
+  tmux send-keys -t $NOTES_PANE "vim" Enter
+  sleep 3
+  vim_search_uuid
+fi
+
+# vimgrep /tags:.* #5e6b8401/ **
