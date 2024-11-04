@@ -240,6 +240,13 @@ function! CalcureAddEvent()
   execute '!python3 ~/.local/bin/tmlib.notes-add-event.py' shellescape(l:current_file) l:current_line
 endfunction
 
+function! CalcureAddLog()
+  let l:current_line = line('.')
+  let l:current_file = expand('%:p')
+  echo "Current File: " . l:current_file . " | Line Number: " . l:current_line
+  execute '!python3 ~/.local/bin/tmlib.notes-add-log.py' shellescape(l:current_file) l:current_line
+endfunction
+
 function! EventsAddExpected()
   let l:current_line = line('.')
   let l:current_file = expand('%:p')

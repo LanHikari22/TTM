@@ -1,6 +1,11 @@
 #!/bin/bash
 
 uuid=$1
+status=$2
+
+if [ -z $status ]; then
+  status="important"
+fi
 
 log_module='tmlib.cli-calcure-add-tw-event'
 log_info_active=1
@@ -45,7 +50,7 @@ scheduled_year=$(date -d"$scheduled" +%Y)
 scheduled_month=$(date -d"$scheduled" +%-m)
 scheduled_day=$(date -d"$scheduled" +%-d)
 desc_csv=$(echo $scheduled_hhmm:$until_hhmm $etag $gcode $uuid $proj $desc | cut -c-101)
-event_csv=$(echo 0,$scheduled_year,$scheduled_month,$scheduled_day,\"$desc_csv\",1,once,important)
+event_csv=$(echo 0,$scheduled_year,$scheduled_month,$scheduled_day,\"$desc_csv\",1,once,$status)
 log_trace "event_csv: $event_csv"
 echo $event_csv >> $EVENTS_CSV
 
